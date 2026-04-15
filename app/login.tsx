@@ -14,7 +14,11 @@ export default function LoginScreen() {
     const handleLogin = async (role: 'customer' | 'agency' = 'customer') => {
         // Oturum açma işlemleri buraya gelecek
         await login(role); // Test için butondan gelen rolü aktarıyoruz
-        router.replace('/(tabs)');
+        if (role === 'agency') {
+            router.replace('/(tabs)/dashboard');
+        } else {
+            router.replace('/(tabs)');
+        }
     };
 
     return (

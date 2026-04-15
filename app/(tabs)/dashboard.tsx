@@ -1,74 +1,102 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Platform, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function DashboardTab() {
-  const menuItems = [
-    { title: 'Rezervasyonlar', icon: 'check-square-o', color: '#0f172a' },
-    { title: 'Turlarım', icon: 'globe', color: '#0f172a' },
-    { title: 'Operasyon & Chat', icon: 'comments-o', color: '#f59e0b' },
-    { title: 'Hızlı Rezerv.', icon: 'plus', color: '#0f172a' },
-    { title: 'Finans & Fatura', icon: 'money', color: '#0f172a' },
-    { title: 'B2B Kampanyalar', icon: 'star-o', color: '#0f172a' },
-    { title: 'Acenta Bilgileri', icon: 'user-o', color: '#0f172a' },
-    { title: 'Blog Yönetimi', icon: 'edit', color: '#4f46e5' }
-  ];
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.headerBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <FontAwesome name="arrow-left" size={20} color="#0f172a" />
+        </TouchableOpacity>
+        <Text style={styles.headerBarTitle}>Genel Bakış</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* Header */}
-        <View style={styles.header}>
-            <Text style={styles.headerTitle}>Genel Bakış</Text>
-            <Text style={styles.headerSubtitle}>Acenta Yönetim Paneli</Text>
-        </View>
-
-        {/* Toplam Satış Card */}
-        <View style={styles.revenueCard}>
-            <View style={styles.revenueIconBox}>
-                <FontAwesome name="dollar" size={24} color="#10b981" />
-            </View>
-            <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={styles.revenueTitle}>TOPLAM SATIŞ</Text>
-                <Text style={styles.revenueAmount}>₺145.500,00</Text>
-            </View>
-        </View>
-
-        {/* Son İşlemler */}
-        <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Son İşlemler</Text>
-        </View>
-        <View style={styles.cardBlock}>
-            <View style={styles.tableHeader}>
-                <Text style={styles.tableHeaderText}>MÜŞTERİ</Text>
-            </View>
-            <View style={styles.transactionRow}>
-                <View style={styles.avatarBox}>
-                    <Text style={styles.avatarText}>AY</Text>
+        {/* Metric Cards - Yatay Kaydırılabilir */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.metricsScroll} snapToInterval={280} decelerationRate="fast">
+            
+            {/* Toplam Satış */}
+            <View style={[styles.metricCard, { borderLeftColor: '#10b981', borderLeftWidth: 4 }]}>
+                <View style={styles.metricRow}>
+                    <View style={[styles.iconCircle, { backgroundColor: '#d1fae5' }]}>
+                        <FontAwesome name="dollar" size={18} color="#10b981" />
+                    </View>
+                    <View style={styles.metricInfo}>
+                        <Text style={styles.metricTitle}>TOPLAM SATIŞ</Text>
+                        <Text style={styles.metricValue}>₺145.500,00</Text>
+                    </View>
                 </View>
-                <Text style={styles.transactionName}>Ahmet Yılmaz</Text>
             </View>
-            <View style={styles.divider} />
-            <View style={styles.transactionRow}>
-                <View style={styles.avatarBox}>
-                    <Text style={styles.avatarText}>AK</Text>
-                </View>
-                <Text style={styles.transactionName}>Ayşe Kaya</Text>
-            </View>
-        </View>
 
-        {/* Menü Grid */}
-        <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Yönetim İşlemleri</Text>
-        </View>
-        <View style={styles.gridContainer}>
-            {menuItems.map((item, index) => (
-                <TouchableOpacity key={index} style={styles.gridItem}>
-                    <FontAwesome name={item.icon as any} size={22} color={item.color} style={{ marginBottom: 12 }} />
-                    <Text style={styles.gridText}>{item.title}</Text>
+            {/* Aktif İşlemler */}
+            <View style={[styles.metricCard, { borderLeftColor: '#3b82f6', borderLeftWidth: 4 }]}>
+                <View style={styles.metricRow}>
+                    <View style={[styles.iconCircle, { backgroundColor: '#dbeafe' }]}>
+                        <FontAwesome name="calendar" size={18} color="#3b82f6" />
+                    </View>
+                    <View style={styles.metricInfo}>
+                        <Text style={styles.metricTitle}>AKTİF İŞLEMLER</Text>
+                        <Text style={styles.metricValue}>34</Text>
+                    </View>
+                </View>
+            </View>
+
+            {/* Bekleyen Hakediş */}
+            <View style={[styles.metricCard, { borderLeftColor: '#f59e0b', borderLeftWidth: 4 }]}>
+                <View style={styles.metricRow}>
+                    <View style={[styles.iconCircle, { backgroundColor: '#fef3c7' }]}>
+                        <FontAwesome name="clock-o" size={18} color="#f59e0b" />
+                    </View>
+                    <View style={styles.metricInfo}>
+                        <Text style={styles.metricTitle}>BEKLEYEN HAKEDİŞ (₺)</Text>
+                        <Text style={styles.metricValue}>₺29.100,00</Text>
+                    </View>
+                </View>
+            </View>
+            
+        </ScrollView>
+
+        {/* Son İşlemler Card (Masaüstü Tablosunun Mobil Versiyonu) */}
+        <View style={styles.tableCard}>
+            <View style={styles.tableCardHeader}>
+                <Text style={styles.tableCardTitle}>Son İşlemler</Text>
+                <TouchableOpacity>
+                    <Text style={styles.tableCardAction}>Tümünü Gör ➝</Text>
                 </TouchableOpacity>
-            ))}
+            </View>
+
+            {/* Item 1 */}
+            <View style={styles.listItem}>
+                <View style={styles.listItemTop}>
+                    <Text style={styles.listCustomer}>Ahmet Yılmaz</Text>
+                    <View style={styles.badgeSuccess}>
+                        <Text style={styles.badgeSuccessText}>ÖDENDİ</Text>
+                    </View>
+                </View>
+                <Text style={styles.listTour}>Kapadokya Balon Turu</Text>
+                <Text style={styles.listPrice}>₺3.400,00</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Item 2 */}
+            <View style={styles.listItem}>
+                <View style={styles.listItemTop}>
+                    <Text style={styles.listCustomer}>Ayşe Kaya</Text>
+                    <View style={styles.badgeWarning}>
+                        <Text style={styles.badgeWarningText}>TAMAMLANDI</Text>
+                    </View>
+                </View>
+                <Text style={styles.listTour}>Büyük İtalya Turu</Text>
+                <Text style={styles.listPrice}>₺18.150,00</Text>
+            </View>
+            
         </View>
 
       </ScrollView>
@@ -77,31 +105,36 @@ export default function DashboardTab() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f8fafc', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
-  scrollContent: { padding: 24, paddingBottom: 100 },
+  safeArea: { flex: 1, backgroundColor: '#f4f7f6', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  headerBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, height: 60, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  backBtn: { padding: 8, marginLeft: -8 },
+  headerBarTitle: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
+  scrollContent: { paddingVertical: 24, paddingBottom: 100 },
   
-  header: { marginBottom: 24 },
-  headerTitle: { fontSize: 26, fontWeight: '900', color: '#0f172a' },
-  headerSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  metricsScroll: { paddingHorizontal: 20, gap: 16, paddingRight: 40 },
+  metricCard: { width: 260, backgroundColor: '#fff', padding: 20, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 },
+  metricRow: { flexDirection: 'row', alignItems: 'center' },
+  iconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  metricInfo: { flex: 1 },
+  metricTitle: { fontSize: 11, fontWeight: '800', color: '#94a3b8', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 },
+  metricValue: { fontSize: 24, fontWeight: '900', color: '#0f172a' },
 
-  revenueCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 24, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4, marginBottom: 32 },
-  revenueIconBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center' },
-  revenueTitle: { fontSize: 12, fontWeight: '800', color: '#64748b', letterSpacing: 0.5, marginBottom: 4 },
-  revenueAmount: { fontSize: 26, fontWeight: '900', color: '#0f172a' },
+  tableCard: { backgroundColor: '#fff', marginHorizontal: 20, marginTop: 24, borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 },
+  tableCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  tableCardTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  tableCardAction: { fontSize: 13, fontWeight: '700', color: '#3b82f6' },
 
-  sectionHeader: { marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  listItem: { paddingVertical: 12 },
+  listItemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  listCustomer: { fontSize: 15, fontWeight: '800', color: '#334155' },
+  listTour: { fontSize: 14, fontWeight: '500', color: '#64748b', marginBottom: 4 },
+  listPrice: { fontSize: 16, fontWeight: '900', color: '#0f172a' },
+  
+  badgeSuccess: { backgroundColor: '#d1fae5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeSuccessText: { fontSize: 11, fontWeight: '800', color: '#059669', letterSpacing: 0.5 },
+  
+  badgeWarning: { backgroundColor: '#ffedd5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeWarningText: { fontSize: 11, fontWeight: '800', color: '#ea580c', letterSpacing: 0.5 },
 
-  cardBlock: { backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 4 },
-  tableHeader: { marginBottom: 16 },
-  tableHeaderText: { fontSize: 12, fontWeight: '700', color: '#94a3b8', letterSpacing: 0.5 },
-  transactionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  avatarBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText: { fontSize: 13, fontWeight: '800', color: '#475569' },
-  transactionName: { fontSize: 15, fontWeight: '600', color: '#334155' },
-  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 8 },
-
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gridItem: { width: '48%', backgroundColor: '#fff', borderRadius: 20, padding: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
-  gridText: { fontSize: 13, fontWeight: '700', color: '#334155', textAlign: 'center' }
+  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 8 }
 });

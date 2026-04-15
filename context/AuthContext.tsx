@@ -43,20 +43,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (role?: string) => {
         const finalRole: UserRole = role === 'agency' ? 'agency' : 'customer';
+        setUserRole(finalRole); // Ekranda anında değişmesi için önce State'i güncelliyoruz
         try {
             await AsyncStorage.setItem('userRole', finalRole);
-            setUserRole(finalRole);
         } catch (error) {
-            console.error('Failed to save user role:', error);
+            console.warn('Failed to save user role (AsyncStorage bridged failed):', error);
         }
     };
 
     const logout = async () => {
+        setUserRole('customer'); // Çıkış yapınca anında State'i müşteriye çekiyoruz
         try {
             await AsyncStorage.removeItem('userRole');
-            setUserRole('customer');
         } catch (error) {
-            console.error('Failed to remove user role:', error);
+            console.warn('Failed to remove user role (AsyncStorage bridged failed):', error);
         }
     };
 

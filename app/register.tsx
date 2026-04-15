@@ -45,7 +45,7 @@ export default function RegisterScreen() {
             'Kayıt Tamamlandı',
             'Evraklarınız yüklenmiştir. 1 iş günü içerisinde incelenecektir, kayıt için teşekkürler!',
             [
-                { text: 'Siteye Gir', onPress: () => router.replace('/(tabs)') }
+                { text: 'Siteye Gir', onPress: () => router.replace('/(tabs)/dashboard') }
             ]
         );
     };

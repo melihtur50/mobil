@@ -21,15 +21,8 @@ export default function TabLayout() {
           borderTopWidth: 1,
           borderTopColor: '#f3f4f6',
           ...Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-            },
-            android: {
-              elevation: 8,
-            },
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+            android: { elevation: 8 },
           }),
         },
       }}>
@@ -43,63 +36,41 @@ export default function TabLayout() {
         }}
       />
       
-      {/* Sadece Müşteri (Customer) */}
+      {/* Keşfet - Sadece Müşteri */}
       <Tabs.Screen
         name="explore"
         options={{
           title: 'Keşfet',
-          href: userRole === 'customer' ? undefined : null,
-          tabBarItemStyle: userRole !== 'customer' ? { display: 'none' } : undefined,
+          href: userRole === 'agency' ? null : undefined,
+          tabBarItemStyle: userRole === 'agency' ? { display: 'none' } : undefined,
           tabBarIcon: ({ color }) => <FontAwesome size={24} name="search" color={color} />,
         }}
       />
+
+      {/* Biletlerim - Sadece Müşteri */}
       <Tabs.Screen
         name="tickets"
         options={{
           title: 'Biletlerim',
-          href: userRole === 'customer' ? undefined : null,
-          tabBarItemStyle: userRole !== 'customer' ? { display: 'none' } : undefined,
+          href: userRole === 'agency' ? null : undefined,
+          tabBarItemStyle: userRole === 'agency' ? { display: 'none' } : undefined,
           tabBarIcon: ({ color }) => <FontAwesome size={24} name="ticket" color={color} />,
         }}
       />
 
-      {/* Sadece Acenta (Agency) */}
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Panelim',
-          href: userRole === 'agency' ? undefined : null,
-          tabBarItemStyle: userRole !== 'agency' ? { display: 'none' } : undefined,
-          tabBarIcon: ({ color }) => <FontAwesome size={24} name="bar-chart" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="add-tour"
-        options={{
-          title: 'Tur Yükle',
-          href: userRole === 'agency' ? undefined : null,
-          tabBarItemStyle: userRole !== 'agency' ? { display: 'none' } : undefined,
-          tabBarIcon: ({ color }) => <FontAwesome size={24} name="plus-circle" color={color} />,
-        }}
-      />
-
-      {/* Eski / İptal Edilen Sekmeler - Gizli */}
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          href: null,
-          tabBarItemStyle: { display: 'none' },
-        }}
-      />
-
-      {/* Her İki Rolde Ortak */}
+      {/* Profil / Acenta Paneli Modülü (Ortak) */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
-          tabBarIcon: ({ color }) => <FontAwesome size={24} name="user" color={color} />,
+          title: userRole === 'agency' ? 'Acenta Paneli' : 'Profil',
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name={userRole === 'agency' ? "building-o" : "user"} color={color} />,
         }}
       />
+
+      {/* Gizlenen Diğer Sayfalar */}
+      <Tabs.Screen name="dashboard" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="add-tour" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="favorites" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
