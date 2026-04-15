@@ -3,9 +3,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
     const router = useRouter();
+    const { logout, userRole } = useAuth();
 
     const handleLogout = () => {
         Alert.alert(
@@ -16,7 +18,10 @@ export default function ProfileScreen() {
                 { 
                     text: "Çıkış Yap", 
                     style: "destructive",
-                    onPress: () => router.replace('/login')
+                    onPress: async () => {
+                        await logout();
+                        router.replace('/login');
+                    }
                 }
             ]
         );
@@ -91,27 +96,31 @@ export default function ProfileScreen() {
 
                 <View style={styles.divider} />
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Acenta Paneli</Text>
+                {userRole === 'agency' && (
+                    <>
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Acenta Paneli</Text>
 
-                    <TouchableOpacity style={styles.menuItem}>
-                        <View style={[styles.menuIconBox, { backgroundColor: '#fff7ed' }]}>
-                            <FontAwesome name="upload" size={16} color="#f97316" />
+                            <TouchableOpacity style={styles.menuItem}>
+                                <View style={[styles.menuIconBox, { backgroundColor: '#fff7ed' }]}>
+                                    <FontAwesome name="upload" size={16} color="#f97316" />
+                                </View>
+                                <Text style={styles.menuText}>Yüklediğim Turlar</Text>
+                                <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.menuItem}>
+                                <View style={[styles.menuIconBox, { backgroundColor: '#fff7ed' }]}>
+                                    <FontAwesome name="building-o" size={16} color="#f97316" />
+                                </View>
+                                <Text style={styles.menuText}>Acenta Bilgilerim</Text>
+                                <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
+                            </TouchableOpacity>
                         </View>
-                        <Text style={styles.menuText}>Yüklediğim Turlar</Text>
-                        <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.menuItem}>
-                        <View style={[styles.menuIconBox, { backgroundColor: '#fff7ed' }]}>
-                            <FontAwesome name="building-o" size={16} color="#f97316" />
-                        </View>
-                        <Text style={styles.menuText}>Acenta Bilgilerim</Text>
-                        <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.divider} />
+                        <View style={styles.divider} />
+                    </>
+                )}
 
                 <View style={[styles.section, { marginBottom: 40 }]}>
                     <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>

@@ -1,17 +1,92 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ScrollView } from 'react-native';
+import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ScrollView, Alert, Modal } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../context/AuthContext';
 
 export default function RegisterScreen() {
     const router = useRouter();
+    const { login } = useAuth();
+    const params = useLocalSearchParams();
+    const isAgency = params.type === 'agency';
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [agencyName, setAgencyName] = useState('');
+    const [tursabNo, setTursabNo] = useState('');
+    const [showDocumentModal, setShowDocumentModal] = useState(false);
+    const [taxUploaded, setTaxUploaded] = useState(false);
+    const [tursabUploaded, setTursabUploaded] = useState(false);
 
-    const handleRegister = () => {
-        // Kayıt işlemleri buraya gelecek
-        router.replace('/(tabs)');
+    const handleRegister = async () => {
+        // İlk aşama kayıt işlemleri eklenebilir
+        if (isAgency) {
+            // Uyarı ve upload modalını aç
+            setShowDocumentModal(true);
+        } else {
+            await login('customer');
+            router.replace('/(tabs)');
+        }
+    };
+
+    const handleDocumentSubmit = async () => {
+        if (!taxUploaded || !tursabUploaded) {
+            Alert.alert('Eksik Belge', 'Lütfen Vergi Levhası ve TÜRSAB belgenizi yükleyiniz.');
+            return;
+        }
+
+        await login('agency');
+
+        setShowDocumentModal(false);
+        Alert.alert(
+            'Kayıt Tamamlandı',
+            'Evraklarınız yüklenmiştir. 1 iş günü içerisinde incelenecektir, kayıt için teşekkürler!',
+            [
+                { text: 'Siteye Gir', onPress: () => router.replace('/(tabs)') }
+            ]
+        );
+    };
+
+    const handleFileUpload = (type: 'tax' | 'tursab') => {
+        Alert.alert(
+            'Dosya Yükleme',
+            'Nasıl yüklemek istersiniz?',
+            [
+                {
+                    text: 'Galeriden (Fotoğraf)',
+                    onPress: async () => {
+                        let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                        if (permissionResult.granted === false) {
+                            Alert.alert('İzin Reddedildi', 'Fotoğraflara erişim izni gereklidir.');
+                            return;
+                        }
+                        let result = await ImagePicker.launchImageLibraryAsync({
+                            mediaTypes: ['images'],
+                            allowsEditing: false,
+                            quality: 1,
+                        });
+                        if (!result.canceled) {
+                            if (type === 'tax') setTaxUploaded(true);
+                            if (type === 'tursab') setTursabUploaded(true);
+                        }
+                    }
+                },
+                {
+                    text: 'Dosyalardan (Belge)',
+                    onPress: async () => {
+                        let result = await DocumentPicker.getDocumentAsync({});
+                        if (!result.canceled) {
+                            if (type === 'tax') setTaxUploaded(true);
+                            if (type === 'tursab') setTursabUploaded(true);
+                        }
+                    }
+                },
+                { text: 'İptal', style: 'cancel' }
+            ]
+        );
     };
 
     return (
@@ -34,7 +109,7 @@ export default function RegisterScreen() {
                             </View>
 
                             <View style={styles.formCard}>
-                                <Text style={styles.formTitle}>Hesap Oluştur</Text>
+                                <Text style={styles.formTitle}>{isAgency ? 'Acenta Hesabı Oluştur' : 'Müşteri Hesabı Oluştur'}</Text>
                                 
                                 <View style={styles.inputBox}>
                                     <FontAwesome name="user-o" size={18} color="#64748b" style={styles.inputIcon} />
@@ -60,20 +135,50 @@ export default function RegisterScreen() {
                                     />
                                 </View>
 
-                                <View style={styles.inputBox}>
-                                    <FontAwesome name="lock" size={22} color="#64748b" style={styles.inputIcon} />
-                                    <TextInput 
-                                        style={styles.input}
-                                        placeholder="Şifre Oluştur"
-                                        placeholderTextColor="#94a3b8"
-                                        secureTextEntry
-                                        value={password}
-                                        onChangeText={setPassword}
-                                    />
-                                </View>
+                                {isAgency ? (
+                                    <>
+                                        <View style={styles.inputBox}>
+                                            <FontAwesome name="building-o" size={18} color="#64748b" style={styles.inputIcon} />
+                                            <TextInput 
+                                                style={styles.input}
+                                                placeholder="Acenta Adı"
+                                                placeholderTextColor="#94a3b8"
+                                                value={agencyName}
+                                                onChangeText={setAgencyName}
+                                            />
+                                        </View>
+
+                                        <View style={styles.inputBox}>
+                                            <FontAwesome name="id-card-o" size={18} color="#64748b" style={styles.inputIcon} />
+                                            <TextInput 
+                                                style={styles.input}
+                                                placeholder="TÜRSAB No"
+                                                placeholderTextColor="#94a3b8"
+                                                keyboardType="numeric"
+                                                value={tursabNo}
+                                                onChangeText={setTursabNo}
+                                            />
+                                        </View>
+                                    </>
+                                ) : (
+                                    <View style={styles.inputBox}>
+                                        <FontAwesome name="lock" size={22} color="#64748b" style={styles.inputIcon} />
+                                        <TextInput 
+                                            style={styles.input}
+                                            placeholder="Şifre Oluştur"
+                                            placeholderTextColor="#94a3b8"
+                                            secureTextEntry={!showPassword}
+                                            value={password}
+                                            onChangeText={setPassword}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                                            <FontAwesome name={showPassword ? "eye" : "eye-slash"} size={18} color="#94a3b8" />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
 
                                 <TouchableOpacity style={styles.loginBtn} onPress={handleRegister}>
-                                    <Text style={styles.loginBtnText}>Kayıt Ol</Text>
+                                    <Text style={styles.loginBtnText}>{isAgency ? 'Acenta Olarak Kayıt Ol' : 'Müşteri Olarak Kayıt Ol'}</Text>
                                 </TouchableOpacity>
 
                                 <View style={styles.footerRow}>
@@ -88,6 +193,46 @@ export default function RegisterScreen() {
                     </KeyboardAvoidingView>
                 </SafeAreaView>
             </View>
+
+            {/* Acenta Evrak Yükleme Modalı */}
+            <Modal
+                visible={showDocumentModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDocumentModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalCard}>
+                        <FontAwesome name="warning" size={40} color="#febb02" style={{ marginBottom: 16 }} />
+                        <Text style={styles.modalTitle}>Son Bir Adım!</Text>
+                        <Text style={styles.modalDesc}>Turlarının yayınlanması için Vergi Levhanı ve TÜRSAB belgeni sisteme yüklemen gerekiyor.</Text>
+                        
+                        <TouchableOpacity 
+                            style={[styles.uploadBtn, taxUploaded && styles.uploadBtnSuccess]} 
+                            onPress={() => handleFileUpload('tax')}
+                        >
+                            <FontAwesome name={taxUploaded ? "check-circle" : "cloud-upload"} size={20} color={taxUploaded ? "#0d652d" : "#0071c2"} />
+                            <Text style={[styles.uploadBtnText, taxUploaded && styles.uploadBtnTextSuccess]}>
+                                {taxUploaded ? "Vergi Levhası Yüklendi" : "Vergi Levhası Yükle"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.uploadBtn, tursabUploaded && styles.uploadBtnSuccess]} 
+                            onPress={() => handleFileUpload('tursab')}
+                        >
+                            <FontAwesome name={tursabUploaded ? "check-circle" : "cloud-upload"} size={20} color={tursabUploaded ? "#0d652d" : "#0071c2"} />
+                            <Text style={[styles.uploadBtnText, tursabUploaded && styles.uploadBtnTextSuccess]}>
+                                {tursabUploaded ? "TÜRSAB Belgesi Yüklendi" : "TÜRSAB Belgesi Yükle"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.modalSubmitBtn} onPress={handleDocumentSubmit}>
+                            <Text style={styles.modalSubmitBtnText}>Belgeleri Gönder ve Kaydol</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </ImageBackground>
     );
 }
@@ -117,5 +262,16 @@ const styles = StyleSheet.create({
     
     footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
     footerText: { color: '#64748b', fontSize: 14, fontWeight: '500' },
-    loginText: { color: '#febb02', fontSize: 14, fontWeight: '800' }
+    loginText: { color: '#febb02', fontSize: 14, fontWeight: '800' },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+    modalCard: { width: '100%', backgroundColor: '#fff', borderRadius: 24, padding: 30, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 15 },
+    modalTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 12 },
+    modalDesc: { fontSize: 15, color: '#64748b', textAlign: 'center', marginBottom: 24, lineHeight: 22 },
+    uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f9ff', borderWidth: 1, borderColor: '#bae6fd', borderRadius: 12, width: '100%', paddingVertical: 14, marginBottom: 12 },
+    uploadBtnSuccess: { backgroundColor: '#e2f4ea', borderColor: '#bce3cf' },
+    uploadBtnText: { marginLeft: 10, fontSize: 15, fontWeight: '700', color: '#0071c2' },
+    uploadBtnTextSuccess: { color: '#0d652d' },
+    modalSubmitBtn: { backgroundColor: '#febb02', width: '100%', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 12 },
+    modalSubmitBtnText: { color: '#0f172a', fontSize: 16, fontWeight: '900' }
 });

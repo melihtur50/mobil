@@ -1,16 +1,19 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar } from 'react-native';
+import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ScrollView } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
     const router = useRouter();
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
-    const handleLogin = () => {
+    const handleLogin = async (role: 'customer' | 'agency' = 'customer') => {
         // Oturum açma işlemleri buraya gelecek
-        // Başarılı olursa ana sekmeye atıyoruz:
+        await login(role); // Test için butondan gelen rolü aktarıyoruz
         router.replace('/(tabs)');
     };
 
@@ -23,7 +26,7 @@ export default function LoginScreen() {
             <View style={styles.overlay}>
                 <SafeAreaView style={styles.safeArea}>
                     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-                        
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                         {/* Logo / Başlık Bölümü */}
                         <View style={styles.header}>
                             <Text style={styles.brandTitle}>Tour<Text style={styles.brandAccent}>kia</Text></Text>
@@ -53,18 +56,25 @@ export default function LoginScreen() {
                                     style={styles.input}
                                     placeholder="Şifre"
                                     placeholderTextColor="#94a3b8"
-                                    secureTextEntry
+                                    secureTextEntry={!showPassword}
                                     value={password}
                                     onChangeText={setPassword}
                                 />
+                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                                    <FontAwesome name={showPassword ? "eye" : "eye-slash"} size={18} color="#94a3b8" />
+                                </TouchableOpacity>
                             </View>
 
                             <TouchableOpacity style={styles.forgotBtn}>
                                 <Text style={styles.forgotText}>Şifremi Unuttum</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-                                <Text style={styles.loginBtnText}>Giriş Yap</Text>
+                            <TouchableOpacity style={styles.loginBtn} onPress={() => handleLogin('customer')}>
+                                <Text style={styles.loginBtnText}>Müşteri Olarak Giriş</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.loginBtn, { backgroundColor: '#0f172a', marginTop: 12 }]} onPress={() => handleLogin('agency')}>
+                                <Text style={styles.loginBtnText}>Acenta Olarak Giriş (Test)</Text>
                             </TouchableOpacity>
 
                             <View style={styles.dividerBox}>
@@ -78,14 +88,17 @@ export default function LoginScreen() {
                                 <Text style={styles.socialBtnText}>Google ile Devam Et</Text>
                             </TouchableOpacity>
 
-                            <View style={styles.footerRow}>
-                                <Text style={styles.footerText}>Hesabınız yok mu? </Text>
-                                <TouchableOpacity onPress={() => router.push('/register')}>
-                                    <Text style={styles.registerText}>Hemen Kaydolun</Text>
+                            <View style={styles.registerSection}>
+                                <Text style={styles.footerText}>Hesabınız yok mu?</Text>
+                                <TouchableOpacity style={styles.customerRegBtn} onPress={() => router.push('/register')}>
+                                    <Text style={styles.customerRegText}>Müşteri Olarak Kaydol</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.agencyRegBtn} onPress={() => router.push('/register?type=agency')}>
+                                    <Text style={styles.agencyRegText}>Acenta Olarak Kaydol</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
-
+                        </ScrollView>
                     </KeyboardAvoidingView>
                 </SafeAreaView>
             </View>
@@ -97,7 +110,8 @@ const styles = StyleSheet.create({
     background: { flex: 1, width: '100%', height: '100%' },
     overlay: { flex: 1, backgroundColor: 'rgba(0, 53, 128, 0.65)' }, // Booking stili koyu lacivert alfa
     safeArea: { flex: 1 },
-    container: { flex: 1, justifyContent: 'space-between', padding: 24, paddingBottom: 40 },
+    container: { flex: 1 },
+    scrollContent: { flexGrow: 1, justifyContent: 'space-between', padding: 24, paddingBottom: 40 },
     
     header: { marginTop: 60, alignItems: 'center' },
     brandTitle: { fontSize: 44, fontWeight: '900', color: '#fff', letterSpacing: -1 },
@@ -124,7 +138,10 @@ const styles = StyleSheet.create({
     socialBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderWidth: 2, borderColor: '#f1f5f9', borderRadius: 16, height: 56 },
     socialBtnText: { fontSize: 15, fontWeight: '700', color: '#334155', marginLeft: 12 },
     
-    footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-    footerText: { color: '#64748b', fontSize: 14, fontWeight: '500' },
-    registerText: { color: '#febb02', fontSize: 14, fontWeight: '800' }
+    registerSection: { alignItems: 'center', marginTop: 24, gap: 10 },
+    footerText: { color: '#64748b', fontSize: 14, fontWeight: '500', marginBottom: 4 },
+    customerRegBtn: { backgroundColor: '#febb02', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: '100%', alignItems: 'center' },
+    customerRegText: { color: '#0f172a', fontSize: 15, fontWeight: '800' },
+    agencyRegBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', width: '100%', alignItems: 'center' },
+    agencyRegText: { color: '#64748b', fontSize: 14, fontWeight: '700' }
 });

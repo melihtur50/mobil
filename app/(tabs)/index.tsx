@@ -59,24 +59,9 @@ export default function HomeScreen() {
           </View>
 
           {/* Service Tabs */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
-            <TouchableOpacity style={[styles.tabItem, activeTab === 'tours' && styles.tabItemActive]} onPress={() => setActiveTab('tours')}>
-              <FontAwesome name="globe" size={16} color={activeTab === 'tours' ? '#fff' : '#bbccdd'} />
-              <Text style={[styles.tabText, activeTab === 'tours' && styles.tabTextActive]}>Turlar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.tabItem, activeTab === 'hotels' && styles.tabItemActive]} onPress={() => setActiveTab('hotels')}>
-              <FontAwesome name="bed" size={16} color={activeTab === 'hotels' ? '#fff' : '#bbccdd'} />
-              <Text style={[styles.tabText, activeTab === 'hotels' && styles.tabTextActive]}>Konaklama</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.tabItem, activeTab === 'flights' && styles.tabItemActive]} onPress={() => setActiveTab('flights')}>
-              <FontAwesome name="plane" size={16} color={activeTab === 'flights' ? '#fff' : '#bbccdd'} />
-              <Text style={[styles.tabText, activeTab === 'flights' && styles.tabTextActive]}>Uçuşlar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.tabItem, activeTab === 'taxi' && styles.tabItemActive]} onPress={() => setActiveTab('taxi')}>
-              <FontAwesome name="car" size={16} color={activeTab === 'taxi' ? '#fff' : '#bbccdd'} />
-              <Text style={[styles.tabText, activeTab === 'taxi' && styles.tabTextActive]}>Havalimanı Taksi</Text>
-            </TouchableOpacity>
-          </ScrollView>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 15 }}>
+            <Text style={{ color: '#fff', fontSize: 26, fontWeight: '900', letterSpacing: 1 }}>TURLAR</Text>
+          </View>
         </SafeAreaView>
       </View>
 

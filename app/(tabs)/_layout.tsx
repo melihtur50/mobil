@@ -4,8 +4,10 @@ import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { FontAwesome } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TabLayout() {
+  const { userRole } = useAuth();
 
   return (
     <Tabs
@@ -31,6 +33,8 @@ export default function TabLayout() {
           }),
         },
       }}>
+      
+      {/* Her İki Rolde Ortak */}
       <Tabs.Screen
         name="index"
         options={{
@@ -38,20 +42,57 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome size={24} name="home" color={color} />,
         }}
       />
+      
+      {/* Sadece Müşteri (Customer) */}
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Arama',
+          title: 'Keşfet',
+          href: userRole === 'customer' ? undefined : null,
+          tabBarItemStyle: userRole !== 'customer' ? { display: 'none' } : undefined,
           tabBarIcon: ({ color }) => <FontAwesome size={24} name="search" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="tickets"
         options={{
-          title: 'Favoriler',
-          tabBarIcon: ({ color }) => <FontAwesome size={24} name="heart" color={color} />,
+          title: 'Biletlerim',
+          href: userRole === 'customer' ? undefined : null,
+          tabBarItemStyle: userRole !== 'customer' ? { display: 'none' } : undefined,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="ticket" color={color} />,
         }}
       />
+
+      {/* Sadece Acenta (Agency) */}
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Panelim',
+          href: userRole === 'agency' ? undefined : null,
+          tabBarItemStyle: userRole !== 'agency' ? { display: 'none' } : undefined,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="bar-chart" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="add-tour"
+        options={{
+          title: 'Tur Yükle',
+          href: userRole === 'agency' ? undefined : null,
+          tabBarItemStyle: userRole !== 'agency' ? { display: 'none' } : undefined,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="plus-circle" color={color} />,
+        }}
+      />
+
+      {/* Eski / İptal Edilen Sekmeler - Gizli */}
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null,
+          tabBarItemStyle: { display: 'none' },
+        }}
+      />
+
+      {/* Her İki Rolde Ortak */}
       <Tabs.Screen
         name="profile"
         options={{
