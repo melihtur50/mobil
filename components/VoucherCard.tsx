@@ -133,6 +133,11 @@ export default function VoucherCard({ ticket, onRefresh }: VoucherCardProps) {
   const [mealRedeemLoading, setMealRedeemLoading] = useState(false);
   const [tourRedeemLoading, setTourRedeemLoading] = useState(false);
   const [localMealRedeemed, setLocalMealRedeemed] = useState(ticket.mealRedeemed);
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  // Tur bitti mi? (Sıradaki Durak kontrolü)
+  const isTourFinished = ticket.tourEndDate ? new Date() > new Date(ticket.tourEndDate) : false;
+  const showGlow = isTourFinished && !localMealRedeemed;
 
   const purchaseDate = new Date(ticket.purchaseDate);
   const formattedDate = purchaseDate.toLocaleDateString('tr-TR', {
@@ -201,6 +206,22 @@ export default function VoucherCard({ ticket, onRefresh }: VoucherCardProps) {
       setMealRedeemLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (showGlow) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, { toValue: 1, duration: 1000, useNativeDriver: false }),
+          Animated.timing(glowAnim, { toValue: 0, duration: 1000, useNativeDriver: false }),
+        ])
+      ).start();
+    }
+  }, [showGlow]);
+
+  const glowColor = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(249, 115, 22, 0.1)', 'rgba(249, 115, 22, 0.6)']
+  });
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -275,18 +296,31 @@ export default function VoucherCard({ ticket, onRefresh }: VoucherCardProps) {
 
         {/* QR 2: Restoran (sadece Tur+Yemek paketinde) */}
         {ticket.hasMealPackage && ticket.restaurantQrData && (
-          <QrBlock
-            label="Restoran Giriş"
-            sublabel={ticket.restaurantInfo?.name ?? 'Anlaşmalı Restoran'}
-            qrValue={ticket.restaurantQrData}
-            color="#f97316"
-            icon="cutlery"
-            badgeText="YEMEK"
-            badgeColor="#ea580c"
-            redeemed={localMealRedeemed}
-            onRedeemPress={handleMealRedeem}
-            redeemLoading={mealRedeemLoading}
-          />
+          <Animated.View style={{ 
+            flex: 1, 
+            borderRadius: 16,
+            backgroundColor: showGlow ? glowColor : 'transparent',
+            padding: showGlow ? 4 : 0
+          }}>
+            {showGlow && (
+              <View style={styles.nextStopBadge}>
+                 <FontAwesome name="map-marker" size={10} color="#fff" />
+                 <Text style={styles.nextStopText}>SIRADAKİ DURAK</Text>
+              </View>
+            )}
+            <QrBlock
+              label="Restoran Giriş"
+              sublabel={ticket.restaurantInfo?.name ?? 'Anlaşmalı Restoran'}
+              qrValue={ticket.restaurantQrData}
+              color="#f97316"
+              icon="cutlery"
+              badgeText="YEMEK"
+              badgeColor="#ea580c"
+              redeemed={localMealRedeemed}
+              onRedeemPress={handleMealRedeem}
+              redeemLoading={mealRedeemLoading}
+            />
+          </Animated.View>
         )}
       </View>
 
@@ -531,4 +565,26 @@ const styles = StyleSheet.create({
     borderColor: '#bae6fd',
   },
   mapBtnText: { fontSize: 12, fontWeight: '800', color: '#008cb3' },
+
+  // Animasyon Ekleri
+  nextStopBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 10,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  nextStopText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: '900',
+  }
 });

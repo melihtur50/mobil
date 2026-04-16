@@ -79,9 +79,23 @@ export default function CheckoutSuccessScreen() {
                             <Text style={styles.pdfAgency}>{params.agencyName || 'Melih Tours'}</Text>
                             <Text style={styles.pdfDivider}>--------------------------------</Text>
                             
-                            {/* QR Data */}
-                            <View style={styles.pdfQrBox}>
-                                <QRCode value={`TOURKIA-${pnr}`} size={160} backgroundColor="white" color="#0f172a" />
+                            {/* QR Alanı - Tek veya Çift */}
+                            <View style={[styles.pdfQrSection, params.hasMealPackage === 'true' && styles.pdfQrSectionDual]}>
+                                <View style={styles.pdfQrWrapper}>
+                                    <Text style={styles.pdfQrLabel}>Tur Operasyonu</Text>
+                                    <View style={[styles.pdfQrBox, { borderColor: '#0071c2' }]}>
+                                        <QRCode value={`TOUR-${pnr}`} size={params.hasMealPackage === 'true' ? 120 : 160} backgroundColor="white" color="#0f172a" />
+                                    </View>
+                                </View>
+
+                                {params.hasMealPackage === 'true' && (
+                                    <View style={styles.pdfQrWrapper}>
+                                        <Text style={styles.pdfQrLabel}>Restoran Giriş</Text>
+                                        <View style={[styles.pdfQrBox, { borderColor: '#f97316' }]}>
+                                            <QRCode value={`MEAL-${pnr}`} size={120} backgroundColor="white" color="#0f172a" />
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                             <Text style={styles.pdfPnr}>PNR: {pnr}</Text>
                             <Text style={styles.pdfAuthInfo}>Rehbere binerken bu kodu okutunuz.</Text>
@@ -142,8 +156,13 @@ const styles = StyleSheet.create({
     pdfAgency: { fontSize: 24, fontWeight: '900', color: '#0f172a', textAlign: 'center', letterSpacing: 1 },
     pdfDivider: { color: '#cbd5e1', textAlign: 'center', marginVertical: 16, letterSpacing: 2 },
     
-    pdfQrBox: { alignItems: 'center', marginBottom: 8 },
-    pdfPnr: { textAlign: 'center', fontSize: 18, fontWeight: '900', color: '#0071c2', marginBottom: 4 },
+    pdfQrSection: { alignItems: 'center', marginBottom: 8 },
+    pdfQrSectionDual: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
+    pdfQrWrapper: { alignItems: 'center' },
+    pdfQrLabel: { fontSize: 10, fontWeight: '900', color: '#64748b', marginBottom: 8, textTransform: 'uppercase' },
+    pdfQrBox: { padding: 8, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1 },
+    
+    pdfPnr: { textAlign: 'center', fontSize: 18, fontWeight: '900', color: '#0071c2', marginTop: 16, marginBottom: 4 },
     pdfAuthInfo: { textAlign: 'center', fontSize: 12, color: '#64748b', fontWeight: '600' },
     
     pdfLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 },

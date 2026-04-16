@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, TextInput, Modal, Dimensions } from 'react-native';
 import { Category, Destination, fetchCategories, fetchDestinations, fetchTours, Tour, subscribeTours, getDisplayPrice, formatCurrency } from '../../services/tourApi';
 
 export default function HomeScreen() {
@@ -14,6 +14,8 @@ export default function HomeScreen() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+  const [selectedCombo, setSelectedCombo] = useState<Tour | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const filteredTours = tours.filter(tour => {
     const term = searchText.toLowerCase();
@@ -164,14 +166,43 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Travel More For Less (Genius Box Equivalent) */}
-        <View style={styles.geniusBox}>
-          <View style={styles.geniusContent}>
-            <Text style={styles.geniusTitle}>Gezdikçe Kazanın 💎</Text>
-            <Text style={styles.geniusDesc}>Tourkia Diamond programı ile seçili turlarda ve otellerde %15'e varan indirim yakalayın.</Text>
-          </View>
-          <FontAwesome name="diamond" size={48} color="#fbb117" style={{ opacity: 0.8 }} />
         </View>
+
+        {/* ─── Kombo Paketler Carousel ─── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Efsane Kombo Paketler 🔥</Text>
+          <Text style={styles.sectionSubtitle}>Tur + Gurme Yemek bir arada!</Text>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.comboScroll}>
+          {tours.filter(t => t.price > 1000).slice(0, 4).map((tour, idx) => (
+            <TouchableOpacity 
+              key={'combo-'+tour.id} 
+              style={styles.comboCard}
+              activeOpacity={0.8}
+              onPress={() => {
+                setSelectedCombo(tour);
+                setModalVisible(true);
+              }}
+            >
+              <Image source={{ uri: tour.image }} style={styles.comboImage} />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.comboOverlay}>
+                 <View style={styles.comboContent}>
+                   <Text style={styles.comboPriceTag}>{formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY').amount, 'TRY')}</Text>
+                   <Text style={styles.comboTitle} numberOfLines={1}>{tour.title}</Text>
+                   <View style={styles.comboIncluded}>
+                      <FontAwesome name="map-marker" size={12} color="#fff" />
+                      <Text style={styles.comboPlus}>+</Text>
+                      <FontAwesome name="cutlery" size={12} color="#fff" />
+                      <Text style={styles.comboLabel}>MAP + MEAL KLASİĞİ</Text>
+                   </View>
+                 </View>
+              </LinearGradient>
+              <View style={styles.comboBadge}>
+                <Text style={styles.comboBadgeText}>-%15 AVANTAJ</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Categories as Destinations/Features */}
         <View style={styles.sectionHeader}>
@@ -302,9 +333,74 @@ export default function HomeScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ─── Snap-on Modal (Quick Preview) ─── */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalBackdrop} 
+          activeOpacity={1} 
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            {selectedCombo && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Image source={{ uri: selectedCombo.image }} style={styles.sheetImage} />
+                <View style={styles.sheetBody}>
+                  <Text style={styles.sheetTitle}>{selectedCombo.title}</Text>
+                  <Text style={styles.sheetSubtitle}>Kapadokya Karma Deneyimi</Text>
+                  
+                  <View style={styles.featureRow}>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureIcon, { backgroundColor: '#eff6ff' }]}>
+                        <FontAwesome name="map" size={14} color="#3b82f6" />
+                      </View>
+                      <View>
+                        <Text style={styles.featureLabel}>Tur Detayı</Text>
+                        <Text style={styles.featureValue}>Profesyonel Rehber + Transfer</Text>
+                      </View>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <View style={[styles.featureIcon, { backgroundColor: '#fff7ed' }]}>
+                        <FontAwesome name="cutlery" size={14} color="#ea580c" />
+                      </View>
+                      <View>
+                        <Text style={styles.featureLabel}>Özel Menü</Text>
+                        <Text style={styles.featureValue}>Testi Kebabı + Sınırsız İçecek</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <Text style={styles.sheetDescription}>
+                    Bu kombo paket ile hem Kapadokya'nın eşsiz vadilerini gezecek hem de 
+                    bölgenin en ünlü restoranında Tourkia üyelerine özel fix menünün tadını çıkaracaksınız.
+                  </Text>
+
+                  <TouchableOpacity 
+                    style={styles.sheetPrimaryBtn}
+                    onPress={() => {
+                      setModalVisible(false);
+                      router.push(`/tour/${selectedCombo.id}`);
+                    }}
+                  >
+                    <Text style={styles.sheetPrimaryBtnText}>Paketi İncele & Rezerve Et</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
@@ -399,5 +495,36 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
   originalPriceStrikethrough: { fontSize: 13, color: '#94a3b8', textDecorationLine: 'line-through', marginBottom: 2, fontWeight: '600' },
   tourPriceDiscounted: { fontSize: 22, fontWeight: '900', color: '#0071c2' },
-  priceSubText: { fontSize: 12, color: '#666', marginTop: 2 }
+  priceSubText: { fontSize: 12, color: '#666', marginTop: 2 },
+
+  // Combo Carousel Styles
+  comboScroll: { paddingHorizontal: 16, gap: 16, paddingBottom: 24 },
+  comboCard: { width: 280, height: 180, borderRadius: 20, overflow: 'hidden', backgroundColor: '#eee', elevation: 12, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 6 } },
+  comboImage: { width: '100%', height: '100%' },
+  comboOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', padding: 16 },
+  comboContent: {},
+  comboPriceTag: { backgroundColor: '#febb02', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, fontSize: 12, fontWeight: '900', color: '#000', marginBottom: 6 },
+  comboTitle: { color: '#fff', fontSize: 18, fontWeight: '900', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 },
+  comboIncluded: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
+  comboPlus: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  comboLabel: { color: '#fff', fontSize: 10, fontWeight: '800', opacity: 0.9, marginLeft: 4 },
+  comboBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
+  comboBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+
+  // Bottom Sheet Modal Styles
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, height: SCREEN_H * 0.7, width: '100%', overflow: 'hidden' },
+  sheetHandle: { width: 40, height: 5, backgroundColor: '#e2e8f0', borderRadius: 10, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
+  sheetImage: { width: '100%', height: 220 },
+  sheetBody: { padding: 24 },
+  sheetTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 4 },
+  sheetSubtitle: { fontSize: 14, color: '#64748b', fontWeight: '600', marginBottom: 20 },
+  featureRow: { flexDirection: 'column', gap: 16, marginBottom: 24 },
+  featureItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  featureIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  featureLabel: { fontSize: 11, fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' },
+  featureValue: { fontSize: 14, fontWeight: '700', color: '#334155' },
+  sheetDescription: { fontSize: 15, color: '#475569', lineHeight: 22, marginBottom: 30 },
+  sheetPrimaryBtn: { backgroundColor: '#0071c2', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#0071c2', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  sheetPrimaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' }
 });

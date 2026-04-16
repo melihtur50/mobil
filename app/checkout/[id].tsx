@@ -58,7 +58,16 @@ export default function CheckoutScreen() {
             await scheduleMealReminder(newTicket);
 
             alert(`🎉 %5 Kazanç: Bu alışverişten +${earned} TourkiaPuan hesabınıza eklendi.`);
-            router.replace({ pathname: '/checkout/success', params: { date: 'En Yakın Müsaitlik', guests: 2, tourName: tour!.title, agencyName: tour!.agencyName } });
+            router.replace({ 
+                pathname: '/checkout/success', 
+                params: { 
+                    date: 'En Yakın Müsaitlik', 
+                    guests: 2, 
+                    tourName: tour!.title, 
+                    agencyName: tour!.agencyName,
+                    hasMealPackage: tour!.price > 1000 ? 'true' : 'false' // Fiyat bazlı veya hasMealPackage flagine göre
+                } 
+            });
         }, 2200);
     };
 
