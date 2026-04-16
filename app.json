@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Tourkia, size en yakın anlaşmalı restoranları göstermek için konumunuza ihtiyaç duyar."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +30,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Tourkia, size en yakın anlaşmalı restoranları göstermek için konumunuza ihtiyaç duyar."
+        }
+      ],
       [
         "expo-splash-screen",
         {

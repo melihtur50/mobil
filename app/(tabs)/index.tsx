@@ -1,8 +1,8 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Category, Destination, fetchCategories, fetchDestinations, fetchTours, Tour } from '../../services/tourApi';
+import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import { Category, Destination, fetchCategories, fetchDestinations, fetchTours, Tour, subscribeTours, getDisplayPrice, formatCurrency } from '../../services/tourApi';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -11,6 +11,16 @@ export default function HomeScreen() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+
+  const filteredTours = tours.filter(tour => {
+    const term = searchText.toLowerCase();
+    // Extended filtering to match "ATV", "Balon", "Gün Doğumu" specifically to Cappadocia tours for extra immersion
+    const isSpecialKeyword = (term.includes('atv') || term.includes('balon') || term.includes('doğumu')) && tour.title.toLowerCase().includes('kapadokya');
+    return tour.title.toLowerCase().includes(term) || tour.slug.toLowerCase().includes(term) || isSpecialKeyword;
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -31,6 +41,13 @@ export default function HomeScreen() {
       }
     };
     loadData();
+
+    // Live_Pulse_Sync
+    const unsubscribe = subscribeTours(async () => {
+        const updated = await fetchTours();
+        setTours(updated);
+    });
+    return unsubscribe;
   }, []);
 
   if (loading) {
@@ -70,11 +87,61 @@ export default function HomeScreen() {
         {/* Massive Booking Style Search Form */}
         <View style={styles.searchFormWrapper}>
           <View style={styles.searchForm}>
-            {/* Destination */}
-            <TouchableOpacity style={styles.formRow}>
+            {/* Destination Input (Dynamic) */}
+            <View style={styles.formRow}>
               <FontAwesome name="search" size={20} color="#333" style={styles.formIcon} />
-              <Text style={styles.formTextActive}>Kapadokya, Nevşehir</Text>
-            </TouchableOpacity>
+              <TextInput 
+                style={styles.searchInput}
+                placeholder="Nereye veya ne yapmak istiyorsunuz?"
+                placeholderTextColor="#666"
+                value={searchText}
+                onChangeText={setSearchText}
+                onFocus={() => setSearchFocused(true)}
+              />
+              {searchFocused && (
+                <TouchableOpacity onPress={() => { setSearchFocused(false); setSearchText(''); }}>
+                  <FontAwesome name="times-circle" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {searchFocused && (
+              <View style={styles.dropdownContainer}>
+                {searchText.length === 0 ? (
+                  <>
+                    <Text style={styles.dropdownTitle}>HIZLI ERİŞİM</Text>
+                    <View style={styles.quickAccessTags}>
+                      {['Kapadokya', 'Balon', 'ATV', 'Gün Doğumu', 'İtalya'].map(tag => (
+                        <TouchableOpacity key={tag} style={styles.tagBtn} onPress={() => setSearchText(tag)}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <Text style={styles.dropdownTitle}>SON ARANANLAR</Text>
+                    {tours.slice(0, 2).map(tour => (
+                      <TouchableOpacity key={'recent-'+tour.id} style={styles.dropdownItem} onPress={() => router.push(`/tour/${tour.id}`)}>
+                        <FontAwesome name="history" size={16} color="#666" style={{ width: 24, textAlign: 'center' }} />
+                        <Text style={styles.dropdownItemText}>{tour.title}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.dropdownTitle}>ARAMA SONUÇLARI</Text>
+                    {filteredTours.length > 0 ? (
+                      filteredTours.map(tour => (
+                        <TouchableOpacity key={'search-'+tour.id} style={styles.dropdownItem} onPress={() => router.push(`/tour/${tour.id}`)}>
+                          <FontAwesome name="map-marker" size={16} color="#0071c2" style={{ width: 24, textAlign: 'center' }} />
+                          <Text style={styles.dropdownItemText}>{tour.title}</Text>
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <Text style={styles.noResultText}>Sonuç bulunamadı.</Text>
+                    )}
+                  </>
+                )}
+              </View>
+            )}
             <View style={styles.formDivider} />
             
             {/* Dates */}
@@ -129,29 +196,104 @@ export default function HomeScreen() {
             <TouchableOpacity key={tour.id} style={styles.bookingTourCard} activeOpacity={0.9} onPress={() => router.push(`/tour/${tour.id}`)}>
               <View style={styles.tourImageContainer}>
                 <Image source={{ uri: tour.image }} style={styles.tourImage} />
+                
+                {tour.isPremiumPartner && (
+                  <View style={styles.premiumBadge}>
+                    <FontAwesome name="bolt" size={12} color="#fbbf24" />
+                    <Text style={styles.premiumText}>Premium Partner</Text>
+                  </View>
+                )}
+
                 <TouchableOpacity style={styles.heartButton}>
                   <FontAwesome name="heart-o" size={18} color="#000" />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.tourContent}>
-                <View style={styles.tourHeaderRow}>
-                  <Text style={styles.tourTitle} numberOfLines={2}>{tour.title}</Text>
-                  <View style={styles.ratingBadgeBooking}>
-                    <Text style={styles.ratingTextBooking}>{tour.rating}</Text>
+              {/* Live_Pulse_Sync Banner */}
+              {tour.lastBookedAt && (Date.now() - tour.lastBookedAt < 3600000) && (
+                  <View style={{ backgroundColor: '#fee2e2', padding: 8, flexDirection: 'row', alignItems: 'center' }}>
+                     <FontAwesome name="bolt" color="#ef4444" size={12} style={{marginRight: 6}} />
+                     <Text style={{ fontSize: 11, color: '#dc2626', fontWeight: '800' }}>Son Dakika: Az önce 1 rezervasyon yapıldı!</Text>
                   </View>
-                </View>
+              )}
+
+              <View style={styles.tourContent}>
+                <Text style={styles.tourTitle} numberOfLines={2}>{tour.title}</Text>
+                
+                {tour.totalReviews && tour.totalReviews > 0 ? (
+                  <View style={styles.socialProofContainer}>
+                    <FontAwesome name="star" size={14} color="#febb02" />
+                    <Text style={styles.socialProofRating}>{tour.rating}</Text>
+                    <Text style={styles.socialProofCount}>({tour.totalReviews} değerlendirme)</Text>
+                  </View>
+                ) : (
+                  <View style={styles.newExperienceBadge}>
+                    <FontAwesome name="star-o" size={12} color="#0071c2" />
+                    <Text style={styles.newExperienceText}>İlk Yorumu Sen Yap</Text>
+                  </View>
+                )}
+
+                {/* Agency Verification Badge & Tooltip */}
+                {tour.isVerifiedAgency && (
+                  <View style={styles.agencyAuthWrapper}>
+                    <TouchableOpacity 
+                      style={styles.verifiedAgencyBadge}
+                      activeOpacity={0.7}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        setActiveTooltipId(activeTooltipId === tour.id ? null : tour.id);
+                      }}
+                    >
+                      <FontAwesome name="check-circle" size={12} color="#10b981" />
+                      <Text style={styles.verifiedAgencyText}>Doğrulanmış Acenta</Text>
+                    </TouchableOpacity>
+
+                    {activeTooltipId === tour.id && (
+                      <View style={styles.tooltipBalloon}>
+                        <Text style={styles.tooltipTitle}>{tour.agencyName}</Text>
+                        <Text style={styles.tooltipText}>TÜRSAB No: {tour.tursabNo}</Text>
+                        <TouchableOpacity style={styles.tooltipClose} onPress={() => setActiveTooltipId(null)}>
+                          <FontAwesome name="times" size={10} color="#94a3b8" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
 
                 <Text style={styles.tourDuration}>{tour.duration} • Harika deneyim</Text>
                 
+                {!!tour.stockCount && tour.stockCount < 5 && (
+                  <View style={styles.stockWarning}>
+                    <FontAwesome name="fire" size={14} color="#dc2626" />
+                    <Text style={styles.stockWarningText}>Son {tour.stockCount} Yer!</Text>
+                  </View>
+                )}
+
                 {tour.badge && (
                   <Text style={styles.earlyBirdText}>{tour.badge}</Text>
                 )}
 
                 <View style={styles.tourFooter}>
                   <Text style={styles.tourPriceLabel}>1 gece, 2 yetişkin</Text>
-                  <Text style={styles.tourPrice}>₺{tour.price.toLocaleString('tr-TR')}</Text>
-                  <Text style={styles.priceSubText}>Vergiler ve ücretler dahildir</Text>
+                  {tour.discountPrice ? (
+                    <View style={styles.priceRow}>
+                      <Text style={styles.originalPriceStrikethrough}>
+                        {formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY').amount, getDisplayPrice(tour.price, tour.currency || 'TRY').currency)}
+                      </Text>
+                      <Text style={styles.tourPriceDiscounted}>
+                        {formatCurrency(getDisplayPrice(tour.discountPrice, tour.currency || 'TRY').amount, getDisplayPrice(tour.discountPrice, tour.currency || 'TRY').currency)}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.tourPrice}>
+                      {formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY').amount, getDisplayPrice(tour.price, tour.currency || 'TRY').currency)}
+                    </Text>
+                  )}
+                  {getDisplayPrice(tour.price, tour.currency || 'TRY').isConverted ? (
+                    <Text style={[styles.priceSubText, { color: '#0071c2', fontStyle: 'italic', fontWeight: '700' }]}>*Tahmini Döviz Karşılığı</Text>
+                  ) : (
+                    <Text style={styles.priceSubText}>Vergiler ve ücretler dahildir</Text>
+                  )}
                 </View>
               </View>
             </TouchableOpacity>
@@ -190,6 +332,15 @@ const styles = StyleSheet.create({
   formIcon: { width: 24, marginRight: 12 },
   formTextActive: { fontSize: 16, fontWeight: '800', color: '#333' },
   formText: { fontSize: 16, fontWeight: '500', color: '#666' },
+  searchInput: { flex: 1, fontSize: 16, fontWeight: '800', color: '#333', height: '100%' },
+  dropdownContainer: { backgroundColor: '#fff', padding: 16 },
+  dropdownTitle: { fontSize: 11, fontWeight: '800', color: '#94a3b8', marginBottom: 12, marginTop: 8, letterSpacing: 0.5 },
+  quickAccessTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  tagBtn: { backgroundColor: '#f1f5f9', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0' },
+  tagText: { fontSize: 13, color: '#334155', fontWeight: '700' },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#f1f5f9' },
+  dropdownItemText: { fontSize: 15, color: '#334155', fontWeight: '700', flex: 1 },
+  noResultText: { fontSize: 14, color: '#94a3b8', fontStyle: 'italic', paddingVertical: 10 },
   searchButton: { backgroundColor: '#0071c2', height: 50, borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
   searchButtonText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 
@@ -216,19 +367,37 @@ const styles = StyleSheet.create({
   bookingTourCard: { width: 300, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#e6e6e6', paddingBottom: 16 },
   tourImageContainer: { position: 'relative', width: '100%', height: 200 },
   tourImage: { width: '100%', height: '100%' },
+  premiumBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: '#3b82f6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  premiumText: { color: '#fff', fontSize: 10, fontWeight: '900', marginLeft: 4, letterSpacing: 0.5 },
   heartButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, backgroundColor: '#fff', borderRadius: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+
   
   tourContent: { padding: 12 },
-  tourHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  tourTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#000', marginRight: 12 },
-  ratingBadgeBooking: { backgroundColor: '#003580', paddingHorizontal: 6, paddingVertical: 4, borderTopLeftRadius: 6, borderTopRightRadius: 6, borderBottomRightRadius: 6 },
-  ratingTextBooking: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  tourTitle: { fontSize: 16, fontWeight: '800', color: '#000', marginBottom: 6 },
+  socialProofContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 4 },
+  socialProofRating: { fontSize: 13, fontWeight: '800', color: '#000' },
+  socialProofCount: { fontSize: 12, color: '#666', fontWeight: '500' },
+  newExperienceBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f9ff', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: 8, gap: 4, borderWidth: 1, borderColor: '#bae6fd' },
+  newExperienceText: { color: '#0071c2', fontSize: 11, fontWeight: '800' },
   
+  agencyAuthWrapper: { position: 'relative', zIndex: 10, alignSelf: 'flex-start', marginBottom: 8 },
+  verifiedAgencyBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 4, gap: 4, borderWidth: 1, borderColor: '#a7f3d0' },
+  verifiedAgencyText: { color: '#047857', fontSize: 11, fontWeight: '700' },
+  tooltipBalloon: { position: 'absolute', top: '100%', left: 0, marginTop: 4, backgroundColor: '#1e293b', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, zIndex: 999, width: 150, shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
+  tooltipTitle: { color: '#fff', fontSize: 12, fontWeight: '800', marginBottom: 2 },
+  tooltipText: { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
+  tooltipClose: { position: 'absolute', top: 2, right: 6, padding: 4 },
+
   tourDuration: { fontSize: 12, color: '#0071c2', fontWeight: '700', marginBottom: 8 },
+  stockWarning: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef2f2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: 8, alignSelf: 'flex-start', borderWidth: 1, borderColor: '#fecaca' },
+  stockWarningText: { color: '#dc2626', fontSize: 12, fontWeight: '800', marginLeft: 6 },
   earlyBirdText: { alignSelf: 'flex-start', backgroundColor: '#e2f4ea', color: '#0d652d', fontSize: 12, fontWeight: '700', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 16 },
   
   tourFooter: { alignItems: 'flex-end', marginTop: 8 },
   tourPriceLabel: { fontSize: 12, color: '#666', marginBottom: 2 },
   tourPrice: { fontSize: 20, fontWeight: '900', color: '#000' },
+  priceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  originalPriceStrikethrough: { fontSize: 13, color: '#94a3b8', textDecorationLine: 'line-through', marginBottom: 2, fontWeight: '600' },
+  tourPriceDiscounted: { fontSize: 22, fontWeight: '900', color: '#0071c2' },
   priceSubText: { fontSize: 12, color: '#666', marginTop: 2 }
 });

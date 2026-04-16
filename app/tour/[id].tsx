@@ -1,8 +1,9 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, Dimensions, ImageBackground, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { fetchTours, Tour } from '../../services/tourApi';
+import { Animated, Dimensions, ImageBackground, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Modal, Image, Linking } from 'react-native';
+import { fetchTours, Tour, getDisplayPrice, formatCurrency } from '../../services/tourApi';
+import AvailabilityCalendar from '../../components/AvailabilityCalendar';
 
 const { width, height } = Dimensions.get('window');
 const HEADER_HEIGHT = 350;
@@ -12,6 +13,12 @@ export default function TourDetailScreen() {
     const router = useRouter();
     const scrollY = new Animated.Value(0);
     const [tour, setTour] = useState<Tour | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [lightboxVisible, setLightboxVisible] = useState(false);
+    const [activeImage, setActiveImage] = useState<string | null>(null);
+
+    // Meteorology_Bridge Simulation Logic
+    const [windRiskProbability] = useState(82); // Simulated % chance of cancellation
 
     useEffect(() => {
         const loadTour = async () => {
@@ -20,6 +27,13 @@ export default function TourDetailScreen() {
             setTour(found);
         };
         loadTour();
+
+        // Live_Pulse_Sync Sub
+        const { subscribeTours } = require('../../services/tourApi');
+        const unsubscribe = subscribeTours(() => {
+            loadTour();
+        });
+        return unsubscribe;
     }, [id]);
 
     if (!tour) return <View style={styles.loadingContainer}><Text>Yükleniyor...</Text></View>;
@@ -75,6 +89,23 @@ export default function TourDetailScreen() {
 
                     <Text style={styles.title}>{tour.title}</Text>
                     
+                    {/* Meteorology_Bridge: Kapadokya Balon Riski Kontrolü */}
+                    {tour.id === '1' && windRiskProbability > 70 && (
+                        <View style={styles.meteorologyBox}>
+                            <View style={styles.meteorologyHeader}>
+                                <FontAwesome name="warning" size={16} color="#c2410c" />
+                                <Text style={styles.meteorologyTitle}>Hava Durumu Uyarısı</Text>
+                            </View>
+                            <Text style={styles.meteorologyText}>
+                                Sivil Havacılık radarlarına göre uçuş bölgesi oldukça rüzgarlı. Balon turlarının rüzgar sebebiyle iptal olma ihtimali <Text style={{fontWeight: '900'}}>%{windRiskProbability}</Text> oranında riskli görünmektedir.
+                            </Text>
+                            <TouchableOpacity style={styles.crossSellBtn} onPress={() => { router.back(); setTimeout(() => router.push('/tour/4'), 100); }}>
+                                <FontAwesome name="motorcycle" size={16} color="#047857" style={{marginRight: 8}} />
+                                <Text style={styles.crossSellBtnText}>Aynı Bölgede ATV Turlarına Göz Atın</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     <View style={styles.infoRow}>
                         <View style={styles.infoPill}>
                             <FontAwesome name="clock-o" size={14} color="#64748b" />
@@ -92,11 +123,56 @@ export default function TourDetailScreen() {
 
                     <View style={styles.divider} />
 
-                    {/* Tur Açıklaması */}
-                    <Text style={styles.sectionTitle}>Genel Bakış</Text>
-                    <Text style={styles.description}>
-                        Bu tur size eşsiz bir deneyim sunmak için özel olarak tasarlandı. Konforlu ulaşım, profesyonel rehberlik ve unutulmaz anılar sizleri bekliyor. Kapadokya'nın veya boğazın büyüleyici manzarasını en iyi açılardan keşfedeceğiniz bu programda yerinizi ayırtın.
-                    </Text>
+                    {/* Dahil & Hariç Çerçevesi */}
+                    <Text style={styles.sectionTitle}>Neler Dahile Neler Değil?</Text>
+                    <View style={styles.incExcBox}>
+                        <View style={styles.incExcColumn}>
+                            <Text style={styles.incExcTitle}>Dahil</Text>
+                            {tour.included?.map((item, idx) => (
+                                <View key={idx} style={styles.incExcRow}>
+                                    <FontAwesome name="check-circle" size={16} color="#10b981" style={{ marginTop: 2 }} />
+                                    <Text style={styles.incExcText}>{item}</Text>
+                                </View>
+                            ))}
+                        </View>
+                        
+                        <View style={styles.incExcDivider} />
+
+                        <View style={styles.incExcColumn}>
+                            <Text style={styles.incExcTitle}>Dahil Değil</Text>
+                            {tour.excluded?.map((item, idx) => (
+                                <View key={idx} style={styles.incExcRow}>
+                                    <FontAwesome name="times-circle" size={16} color="#94a3b8" style={{ marginTop: 2 }} />
+                                    <Text style={[styles.incExcText, { color: '#64748b', textDecorationLine: 'line-through' }]}>{item}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Lokasyon Modülü */}
+                    {tour.meetingPoint && (
+                        <View style={{ marginBottom: 24 }}>
+                            <Text style={styles.sectionTitle}>Buluşma Noktası & Lokasyon</Text>
+                            <View style={styles.locationBox}>
+                                <View style={styles.locationIconWrap}>
+                                    <FontAwesome name="map-marker" size={24} color="#ef4444" />
+                                </View>
+                                <View style={styles.locationInfo}>
+                                    <Text style={styles.locationAddress}>{tour.meetingPoint.address}</Text>
+                                    <TouchableOpacity 
+                                        style={styles.locationBtn} 
+                                        onPress={() => Linking.openURL(`https://maps.google.com/?q=${tour.meetingPoint?.lat},${tour.meetingPoint?.lng}`)}
+                                    >
+                                        <Text style={styles.locationBtnText}>Yol Tarifi Al</Text>
+                                        <FontAwesome name="angle-right" size={14} color="#0071c2" style={{ marginLeft: 4, marginTop: 2 }} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                            {tour.hasHotelPickup && (
+                                <Text style={styles.hotelPickupNote}>* Bu tur 'Otelden Ücretsiz Alış' (Hotel Pickup) içermektedir.</Text>
+                            )}
+                        </View>
+                    )}
 
                     {/* Seyahat Planı (Itinerary) */}
                     <Text style={styles.sectionTitle}>Seyahat Planı</Text>
@@ -123,6 +199,56 @@ export default function TourDetailScreen() {
                             <Text style={styles.timelineTitle}>Dönüş ve Kapanış</Text>
                         </View>
                     </View>
+
+                    {/* Dinamik ve Gerçek Görsel Öncelikli Galeri */}
+                    {(tour.gallery && tour.gallery.length > 0) && (
+                        <View style={{ marginBottom: 24 }}>
+                            <Text style={styles.sectionTitle}>Turdan Kareler</Text>
+                            <Text style={styles.galleryNote}>
+                                <FontAwesome name="check-circle" size={12} color="#10b981" /> Acenta tarafından yüklenen 'Gerçek Tur Fotoğrafları'
+                            </Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                                {[...tour.gallery]
+                                    .sort((a, b) => Number(a.isStock) - Number(b.isStock))
+                                    .map(img => (
+                                        <TouchableOpacity 
+                                            key={img.id} 
+                                            onPress={() => { setActiveImage(img.url); setLightboxVisible(true); }}
+                                            activeOpacity={0.9}
+                                        >
+                                            <Image source={{ uri: img.url }} style={styles.galleryImage} />
+                                            {!img.isStock && (
+                                                <View style={styles.realPhotoBadge}>
+                                                    <Text style={styles.realPhotoText}>Gerçek Görsel</Text>
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                            </ScrollView>
+                        </View>
+                    )}
+
+                    {/* Müsaitlik Takvimi */}
+                    <View style={styles.divider} />
+                    <AvailabilityCalendar 
+                        availabilities={tour.availabilities || []} 
+                        selectedDate={selectedDate} 
+                        onSelectDate={setSelectedDate} 
+                    />
+
+                    {/* Trust Banner (İptal Politikası) */}
+                    {tour.cancellationPolicy && (
+                        <View style={[styles.trustBanner, !tour.isRefundable && styles.trustBannerNonRef]}>
+                            <FontAwesome 
+                                name={tour.isRefundable ? "shield" : "exclamation-circle"} 
+                                size={18} 
+                                color={tour.isRefundable ? "#10b981" : "#ef4444"} 
+                            />
+                            <Text style={[styles.trustBannerText, !tour.isRefundable && styles.trustBannerTextNonRef]}>
+                                {tour.cancellationPolicy}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* Yorumlar Bölümü */}
                     <View style={styles.divider} />
@@ -165,14 +291,48 @@ export default function TourDetailScreen() {
                 </View>
             </Animated.ScrollView>
 
+            {/* Tam Ekran Lightbox (Zoom Özellikli) */}
+            <Modal visible={lightboxVisible} transparent={true} animationType="fade" onRequestClose={() => setLightboxVisible(false)}>
+                <View style={styles.lightboxContainer}>
+                    <TouchableOpacity style={styles.lightboxCloseBtn} onPress={() => setLightboxVisible(false)}>
+                        <FontAwesome name="times" size={28} color="#fff" />
+                    </TouchableOpacity>
+                    {activeImage && (
+                        <ScrollView 
+                           contentContainerStyle={styles.lightboxScroll}
+                           maximumZoomScale={3}
+                           minimumZoomScale={1}
+                           centerContent
+                           showsHorizontalScrollIndicator={false}
+                           showsVerticalScrollIndicator={false}
+                        >
+                            <Image source={{ uri: activeImage }} style={styles.lightboxImage} resizeMode="contain" />
+                        </ScrollView>
+                    )}
+                </View>
+            </Modal>
+
             {/* Sabit Alt Satın Alma Barı */}
             <View style={styles.bottomBar}>
                 <View style={styles.priceContainer}>
                     <Text style={styles.priceLabel}>Kişi başı</Text>
-                    <Text style={styles.priceAmount}>₺{tour.price.toLocaleString('tr-TR')}</Text>
+                    <Text style={styles.priceAmount}>{formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY').amount, getDisplayPrice(tour.price, tour.currency || 'TRY').currency)}</Text>
+                    {getDisplayPrice(tour.price, tour.currency || 'TRY').isConverted && (
+                        <Text style={{ fontSize: 10, color: '#febb02', fontWeight: '800' }}>*Tahmini Kur Karşılığı</Text>
+                    )}
                 </View>
-                <TouchableOpacity style={styles.buyBtn} onPress={() => router.push(`/checkout/${tour.id}`)}>
-                    <Text style={styles.buyBtnText}>Rezervasyon Yap</Text>
+                <TouchableOpacity 
+                    style={[
+                        styles.buyBtn, 
+                        !selectedDate && { backgroundColor: '#cbd5e1' },
+                        selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 && { backgroundColor: '#ef4444' }
+                    ]} 
+                    disabled={!selectedDate || (selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0)}
+                    onPress={() => router.push(`/checkout/${tour.id}?date=${selectedDate}`)}
+                >
+                    <Text style={styles.buyBtnText}>
+                        {!selectedDate ? 'Tarih Seçiniz' : (tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 ? 'Kontenjan Dolu - Başka Tarih Seç' : 'Rezervasyon Yap')}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -209,7 +369,13 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 24 },
     
     sectionTitle: { fontSize: 18, fontWeight: '900', color: '#0f172a', marginBottom: 16 },
-    description: { fontSize: 15, color: '#475569', lineHeight: 24, fontWeight: '500' },
+    
+    incExcBox: { flexDirection: 'row', backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 24 },
+    incExcColumn: { flex: 1 },
+    incExcDivider: { width: 1, backgroundColor: '#e2e8f0', marginHorizontal: 12 },
+    incExcTitle: { fontSize: 14, fontWeight: '800', color: '#0f172a', marginBottom: 12 },
+    incExcRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, gap: 8 },
+    incExcText: { fontSize: 13, color: '#0f172a', flex: 1, lineHeight: 18, fontWeight: '600' },
     
     timelineItem: { paddingLeft: 24, borderLeftWidth: 2, borderLeftColor: '#e2e8f0', position: 'relative', paddingBottom: 24 },
     timelineDot: { position: 'absolute', left: -7, top: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: '#fff', borderWidth: 2, borderColor: '#0071c2' },
@@ -230,5 +396,35 @@ const styles = StyleSheet.create({
     priceLabel: { fontSize: 12, color: '#64748b', fontWeight: '600', marginBottom: 2 },
     priceAmount: { fontSize: 22, fontWeight: '900', color: '#0f172a' },
     buyBtn: { backgroundColor: '#0071c2', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, shadowColor: '#0071c2', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-    buyBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' }
+    buyBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    
+    trustBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', padding: 12, borderRadius: 12, marginTop: 8, borderWidth: 1, borderColor: '#a7f3d0' },
+    trustBannerNonRef: { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
+    trustBannerText: { color: '#047857', fontSize: 13, fontWeight: '700', marginLeft: 10, flex: 1 },
+    trustBannerTextNonRef: { color: '#dc2626' },
+
+    locationBox: { flexDirection: 'row', backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' },
+    locationIconWrap: { width: 44, height: 44, backgroundColor: '#fef2f2', borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+    locationInfo: { flex: 1 },
+    locationAddress: { fontSize: 13, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
+    locationBtn: { flexDirection: 'row', alignItems: 'center' },
+    locationBtnText: { color: '#0071c2', fontWeight: '800', fontSize: 12 },
+    hotelPickupNote: { fontSize: 12, color: '#10b981', fontWeight: '700', marginTop: 10, fontStyle: 'italic' },
+
+    meteorologyBox: { backgroundColor: '#ffedd5', padding: 16, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#fdba74' },
+    meteorologyHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 },
+    meteorologyTitle: { color: '#c2410c', fontWeight: '800', fontSize: 14 },
+    meteorologyText: { color: '#9a3412', fontSize: 13, lineHeight: 18, marginBottom: 16 },
+    crossSellBtn: { backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: '#a7f3d0', paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    crossSellBtnText: { color: '#047857', fontWeight: '800', fontSize: 12 },
+
+    galleryNote: { fontSize: 13, color: '#10b981', fontWeight: '600', marginBottom: 16, fontStyle: 'italic' },
+    galleryImage: { width: 160, height: 120, borderRadius: 12, backgroundColor: '#e2e8f0' },
+    realPhotoBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    realPhotoText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+    
+    lightboxContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+    lightboxCloseBtn: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 30, right: 20, zIndex: 100, padding: 10, width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 25 },
+    lightboxScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', width: width, height: height },
+    lightboxImage: { width: width, height: height * 0.8 }
 });

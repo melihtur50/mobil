@@ -47,6 +47,17 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Lezzet - Sadece Müşteri */}
+      <Tabs.Screen
+        name="lezzet"
+        options={{
+          title: 'Lezzet',
+          href: userRole === 'agency' ? null : undefined,
+          tabBarItemStyle: userRole === 'agency' ? { display: 'none' } : undefined,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="cutlery" color={color} />,
+        }}
+      />
+
       {/* Biletlerim - Sadece Müşteri */}
       <Tabs.Screen
         name="tickets"

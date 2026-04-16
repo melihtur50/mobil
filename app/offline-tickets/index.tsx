@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { OfflineTicket, clearOfflineTickets, getOfflineTickets, saveTicketOffline } from '../../services/offlineStorage';
 import { fetchTours } from '../../services/tourApi';
@@ -103,10 +103,20 @@ export default function OfflineTicketsScreen() {
                                 </View>
                                 <Text style={styles.ticketIdText}>Bilet No: {ticket.id.substring(0, 8).toUpperCase()}</Text>
 
-                                <TouchableOpacity style={styles.offlineMapBtn}>
-                                    <FontAwesome name="map-o" size={16} color="#008cb3" />
-                                    <Text style={styles.offlineMapText}>Çevrimdışı Haritada Gör</Text>
-                                </TouchableOpacity>
+                                {ticket.tour.meetingPoint ? (
+                                    <TouchableOpacity 
+                                        style={styles.offlineMapBtn}
+                                        onPress={() => Linking.openURL(`https://maps.google.com/?q=${ticket.tour.meetingPoint?.lat},${ticket.tour.meetingPoint?.lng}`)}
+                                    >
+                                        <FontAwesome name="map-marker" size={16} color="#008cb3" />
+                                        <Text style={styles.offlineMapText}>Buluşma Noktasına Yol Tarifi Al</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity style={styles.offlineMapBtn}>
+                                        <FontAwesome name="map-o" size={16} color="#008cb3" />
+                                        <Text style={styles.offlineMapText}>Çevrimdışı Haritada Gör</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                     ))

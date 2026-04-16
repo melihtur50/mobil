@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Platform, StatusBar, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AvailabilityCalendar from '../components/AvailabilityCalendar';
+import { makeQuickSale } from '../services/tourApi';
 
 export default function QuickBookScreen() {
     const router = useRouter();
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [tourAvails] = useState([
+      { date: '2026-04-18', isClosed: false, capacity: 5 },
+      { date: '2026-04-19', isClosed: true, capacity: 0 },
+      { date: '2026-04-20', isClosed: false, capacity: 2 },
+      { date: '2026-04-21', isClosed: false, capacity: 14 }
+    ]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -41,14 +50,14 @@ export default function QuickBookScreen() {
                                 <FontAwesome name="chevron-down" size={12} color="#64748b" />
                             </TouchableOpacity>
 
+                            <Text style={styles.inputLabel}>Tarih <Text style={styles.asterisk}>*</Text></Text>
+                            <AvailabilityCalendar 
+                                availabilities={tourAvails}
+                                selectedDate={selectedDate}
+                                onSelectDate={setSelectedDate}
+                            />
+
                             <View style={styles.row}>
-                                <View style={[styles.column, { marginRight: 12 }]}>
-                                    <Text style={styles.inputLabel}>Tarih <Text style={styles.asterisk}>*</Text></Text>
-                                    <TouchableOpacity style={styles.dateInput}>
-                                        <Text style={styles.placeholderText}>GG.AA.YYYY</Text>
-                                        <FontAwesome name="calendar-o" size={14} color="#0f172a" />
-                                    </TouchableOpacity>
-                                </View>
                                 <View style={styles.column}>
                                     <Text style={styles.inputLabel}>Kişi Sayısı <Text style={styles.asterisk}>*</Text></Text>
                                     <View style={styles.standardInputContainer}>
@@ -106,7 +115,14 @@ export default function QuickBookScreen() {
                             </View>
 
                             {/* Tamamla Butonu */}
-                            <TouchableOpacity style={styles.submitBtn}>
+                            <TouchableOpacity 
+                                style={styles.submitBtn} 
+                                onPress={() => {
+                                    makeQuickSale('1', 1, selectedDate || '2026-04-18');
+                                    alert('Satış Başarılı! Tur stokları gerçek zamanlı güncellendi.');
+                                    router.back();
+                                }}
+                            >
                                 <Text style={styles.submitBtnText}>Rezervasyonu Tamamla & Voucher Kes</Text>
                             </TouchableOpacity>
                             

@@ -1,8 +1,10 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { fetchTours, Tour } from '../../services/tourApi';
+import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Switch } from 'react-native';
+import { fetchTours, Tour, TourkiaPoints } from '../../services/tourApi';
+import { saveTicketOffline } from '../../services/offlineStorage';
+import { scheduleMealReminder } from '../../services/notificationService';
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -14,6 +16,9 @@ export default function CheckoutScreen() {
     const [expiry, setExpiry] = useState('');
     const [cvv, setCvv] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    
+    // Points_Burner State
+    const [usePoints, setUsePoints] = useState(false);
 
     useEffect(() => {
         const loadTour = async () => {
@@ -26,13 +31,42 @@ export default function CheckoutScreen() {
 
     const handlePayment = () => {
         setIsProcessing(true);
-        setTimeout(() => {
+        setTimeout(async () => {
             setIsProcessing(false);
-            router.replace('/checkout/success');
-        }, 2000);
+            if (usePoints && TourkiaPoints.points > 0) {
+                 TourkiaPoints.burn(Math.min(TourkiaPoints.points, tour!.price * 2));
+            }
+            const earned = Math.floor(finalAmount * 0.05);
+            TourkiaPoints.add(earned);
+            
+            // Tur Tarihlerini Ayarla (Demo olduğu için bugüne kuruyoruz)
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000); // 4 saatlik tur
+
+            // AsyncStorage_Vault Secure Offline Storage 
+            const newTicket = await saveTicketOffline(
+                tour!, 
+                "Demo Kullanıcı", 
+                2, 
+                true, // Demo olduğu için yemek paketi dahil varsayıyoruz
+                { id: 'rest-1', name: 'Tourkia Partner Restaurant', address: 'Göreme, Nevşehir' },
+                startDate.toISOString(),
+                endDate.toISOString()
+            );
+
+            // Akıllı bildirimi planla
+            await scheduleMealReminder(newTicket);
+
+            alert(`🎉 %5 Kazanç: Bu alışverişten +${earned} TourkiaPuan hesabınıza eklendi.`);
+            router.replace({ pathname: '/checkout/success', params: { date: 'En Yakın Müsaitlik', guests: 2, tourName: tour!.title, agencyName: tour!.agencyName } });
+        }, 2200);
     };
 
     if (!tour) return null;
+
+    const baseTotal = tour.price * 2;
+    const discount = (usePoints && TourkiaPoints.points > 0) ? Math.min(TourkiaPoints.points, baseTotal) : 0;
+    const finalAmount = baseTotal - discount;
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -63,11 +97,46 @@ export default function CheckoutScreen() {
                             <Text style={styles.summaryText}>2x Yetişkin Yolcu</Text>
                         </View>
                         <View style={styles.divider} />
+                        {discount > 0 && (
+                            <View style={[styles.summaryRow, { justifyContent: 'space-between' }]}>
+                                <Text style={[styles.totalLabel, {color: '#10b981'}]}>TourkiaPuan İndirimi</Text>
+                                <Text style={[styles.totalAmount, {color: '#10b981'}]}>-₺{discount.toLocaleString('tr-TR')}</Text>
+                            </View>
+                        )}
                         <View style={[styles.summaryRow, { marginBottom: 0, justifyContent: 'space-between' }]}>
-                            <Text style={styles.totalLabel}>Toplam Tutar</Text>
-                            <Text style={styles.totalAmount}>₺{(tour.price * 2).toLocaleString('tr-TR')}</Text>
+                            <Text style={styles.totalLabel}>Ödenecek Tutar</Text>
+                            <Text style={styles.totalAmount}>₺{finalAmount.toLocaleString('tr-TR')}</Text>
                         </View>
                     </View>
+
+                    {/* Points_Burner Modülü */}
+                    {TourkiaPoints.points > 0 && (
+                        <View style={styles.pointsBurnerBox}>
+                            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}>
+                                <FontAwesome name="database" size={16} color="#f59e0b" style={{marginRight: 8}} />
+                                <Text style={styles.pointsBurnerTitle}>TourkiaPuan™ Kullan</Text>
+                            </View>
+                            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                                <Text style={styles.pointsBurnerText}>Hesabınızdaki <Text style={{fontWeight: '900'}}>{TourkiaPoints.points} Puan</Text> ile sepetinizde anında indirim yapabilirsiniz.</Text>
+                                <Switch value={usePoints} onValueChange={setUsePoints} trackColor={{false: '#cbd5e1', true: '#f59e0b'}} thumbColor="#fff" />
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Dinamik Hotel Pickup Modülü */}
+                    {tour.hasHotelPickup && (
+                        <View style={{ marginBottom: 4 }}>
+                            <Text style={styles.sectionTitle}>Otelden Alınış (Hotel Pickup)</Text>
+                            <View style={[styles.inputGroup, { borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' }]}>
+                                <Text style={{ fontSize: 12, color: '#059669', fontWeight: '700', marginBottom: 8 }}>Rehberimiz sizi bu adresten ücretsiz alacaktır.</Text>
+                                <TextInput 
+                                    style={[styles.input, { borderBottomColor: '#a7f3d0', marginBottom: 0 }]} 
+                                    placeholder="Lütfen Konakladığınız Otelin Adını Girin..." 
+                                    placeholderTextColor="#34d399"
+                                />
+                            </View>
+                        </View>
+                    )}
 
                     {/* Fatura / İletişim Bilgileri */}
                     <Text style={styles.sectionTitle}>İletişim Bilgileriniz</Text>
@@ -121,6 +190,13 @@ export default function CheckoutScreen() {
                     <Text style={styles.secureText}>
                         <FontAwesome name="lock" size={12} /> Tüm işlemleriniz 256-bit SSL sertifikası ile şifrelenmektedir.
                     </Text>
+
+                    <View style={styles.disclaimerBox}>
+                        <FontAwesome name="info-circle" size={14} color="#64748b" style={{ marginRight: 8 }} />
+                        <Text style={styles.disclaimerText}>
+                            <Text style={{ fontWeight: '700' }}>Önemli Not:</Text> "Ön Ödemeli Menü" tutarı Tourkia havuzunda toplanır. Tur sırasında vereceğiniz "Ekstra Siparişler" ise doğrudan restoranda ödenecektir.
+                        </Text>
+                    </View>
                     
                     <View style={{height: 100}} />
                 </ScrollView>
@@ -132,7 +208,7 @@ export default function CheckoutScreen() {
                     {isProcessing ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.payBtnText}>₺{(tour.price * 2).toLocaleString('tr-TR')} Öde</Text>
+                        <Text style={styles.payBtnText}>₺{finalAmount.toLocaleString('tr-TR')} Öde</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -157,6 +233,10 @@ const styles = StyleSheet.create({
     totalLabel: { fontSize: 15, fontWeight: '700', color: '#475569' },
     totalAmount: { fontSize: 18, fontWeight: '900', color: '#0071c2' },
 
+    pointsBurnerBox: { backgroundColor: '#fffbeb', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#fde68a', marginBottom: 16 },
+    pointsBurnerTitle: { fontSize: 15, fontWeight: '800', color: '#d97706' },
+    pointsBurnerText: { fontSize: 13, color: '#b45309', flex: 1, marginRight: 16, lineHeight: 18 },
+
     inputGroup: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 16 },
     input: { height: 50, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', fontSize: 15, color: '#0f172a', fontWeight: '500', marginBottom: 8 },
     rowInputs: { flexDirection: 'row', marginTop: 8 },
@@ -169,6 +249,24 @@ const styles = StyleSheet.create({
     cardVisualExp: { color: '#e2e8f0', fontSize: 14, fontWeight: '600' },
 
     secureText: { textAlign: 'center', color: '#10b981', fontSize: 12, fontWeight: '700', marginTop: 8 },
+
+    disclaimerBox: { 
+        flexDirection: 'row', 
+        backgroundColor: '#f1f5f9', 
+        borderRadius: 12, 
+        padding: 12, 
+        marginTop: 24, 
+        borderWidth: 1, 
+        borderColor: '#e2e8f0',
+        alignItems: 'flex-start'
+    },
+    disclaimerText: { 
+        flex: 1, 
+        fontSize: 12, 
+        color: '#64748b', 
+        lineHeight: 18,
+        fontWeight: '500'
+    },
 
     bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', padding: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 20, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
     payBtn: { backgroundColor: '#0071c2', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },

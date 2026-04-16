@@ -126,6 +126,18 @@ export default function ProfileScreen() {
                         <View style={styles.divider} />
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>ACENTA BİLGİ & YÖNETİM</Text>
+
+                            <TouchableOpacity 
+                                style={[styles.menuItem, { backgroundColor: '#fff7ed', borderRadius: 12, paddingHorizontal: 12 }]} 
+                                onPress={() => router.push('/waiter-dashboard')}
+                            >
+                                <View style={[styles.menuIconBox, { backgroundColor: '#ffedd5' }]}>
+                                    <FontAwesome name="cutlery" size={16} color="#ea580c" />
+                                </View>
+                                <Text style={[styles.menuText, { color: '#ea580c' }]}>Garson Paneli (Restoran)</Text>
+                                <FontAwesome name="chevron-right" size={12} color="#fed7aa" style={styles.chevron} />
+                            </TouchableOpacity>
+
                             {agencyMenuItems.map((item, index) => (
                                 <TouchableOpacity 
                                     key={index} 

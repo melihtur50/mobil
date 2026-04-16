@@ -77,8 +77,8 @@ export default function LoginScreen() {
                                 <Text style={styles.loginBtnText}>Müşteri Olarak Giriş</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={[styles.loginBtn, { backgroundColor: '#0f172a', marginTop: 12 }]} onPress={() => handleLogin('agency')}>
-                                <Text style={styles.loginBtnText}>Acenta Olarak Giriş (Test)</Text>
+                            <TouchableOpacity style={[styles.loginBtn, { backgroundColor: '#0f172a', marginTop: 12 }]} onPress={() => router.push('/agency-auth?tab=login')}>
+                                <Text style={styles.loginBtnText}>Acenta Yönetim Paneli</Text>
                             </TouchableOpacity>
 
                             <View style={styles.dividerBox}>
@@ -97,8 +97,8 @@ export default function LoginScreen() {
                                 <TouchableOpacity style={styles.customerRegBtn} onPress={() => router.push('/register')}>
                                     <Text style={styles.customerRegText}>Müşteri Olarak Kaydol</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.agencyRegBtn} onPress={() => router.push('/register?type=agency')}>
-                                    <Text style={styles.agencyRegText}>Acenta Olarak Kaydol</Text>
+                                <TouchableOpacity style={styles.agencyRegBtn} onPress={() => router.push('/agency-auth?tab=register')}>
+                                    <Text style={styles.agencyRegText}>Acentayı Sisteme Kaydet</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
