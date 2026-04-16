@@ -275,52 +275,64 @@ export default function VoucherCard({ ticket, onRefresh }: VoucherCardProps) {
         <View style={styles.perfNotchR} />
       </View>
 
-      {/* ── QR Alanı ── */}
-      <View
-        style={[
-          styles.qrSection,
-          ticket.hasMealPackage ? styles.qrSectionDual : styles.qrSectionSingle,
-        ]}>
-        {/* QR 1: Tur Operasyonu */}
-        <QrBlock
-          label="Tur Operasyonu"
-          sublabel="Rehberinize okutun"
-          qrValue={ticket.tourQrData}
-          color="#008cb3"
-          icon="plane"
-          badgeText="TUR"
-          badgeColor="#0369a1"
-          onRedeemPress={handleTourRedeem}
-          redeemLoading={tourRedeemLoading}
-        />
-
-        {/* QR 2: Restoran (sadece Tur+Yemek paketinde) */}
-        {ticket.hasMealPackage && ticket.restaurantQrData && (
-          <Animated.View style={{ 
-            flex: 1, 
-            borderRadius: 16,
-            backgroundColor: showGlow ? glowColor : 'transparent',
-            padding: showGlow ? 4 : 0
-          }}>
-            {showGlow && (
-              <View style={styles.nextStopBadge}>
-                 <FontAwesome name="map-marker" size={10} color="#fff" />
-                 <Text style={styles.nextStopText}>SIRADAKİ DURAK</Text>
-              </View>
-            )}
-            <QrBlock
-              label="Restoran Giriş"
-              sublabel={ticket.restaurantInfo?.name ?? 'Anlaşmalı Restoran'}
-              qrValue={ticket.restaurantQrData}
-              color="#f97316"
-              icon="cutlery"
-              badgeText="YEMEK"
-              badgeColor="#ea580c"
-              redeemed={localMealRedeemed}
-              onRedeemPress={handleMealRedeem}
-              redeemLoading={mealRedeemLoading}
+      {/* ── Zaman Çizelgesi (Timeline Flow) ── */}
+      <View style={styles.timelineContainer}>
+        {/* Adım 1: Tur Operasyonu */}
+        <View style={styles.timelineItem}>
+          <View style={styles.timelineLeft}>
+            <Text style={styles.timelineTime}>10:00</Text>
+            <View style={[styles.timelineLine, { height: ticket.hasMealPackage ? '100%' : 0 }]} />
+            <View style={[styles.timelineDot, { backgroundColor: '#008cb3' }]} />
+          </View>
+          <View style={styles.timelineRight}>
+             <QrBlock
+              label="Tur Operasyonu"
+              sublabel="Rehberinize okutun"
+              qrValue={ticket.tourQrData}
+              color="#008cb3"
+              icon="plane"
+              badgeText="TUR"
+              badgeColor="#0369a1"
+              onRedeemPress={handleTourRedeem}
+              redeemLoading={tourRedeemLoading}
             />
-          </Animated.View>
+          </View>
+        </View>
+
+        {/* Adım 2: Restoran (sadece Tur+Yemek paketinde) */}
+        {ticket.hasMealPackage && ticket.restaurantQrData && (
+          <View style={[styles.timelineItem, { marginTop: 20 }]}>
+            <View style={styles.timelineLeft}>
+              <Text style={styles.timelineTime}>13:00</Text>
+              <View style={[styles.timelineDot, { backgroundColor: '#f97316' }]} />
+            </View>
+            <View style={styles.timelineRight}>
+              <Animated.View style={{ 
+                borderRadius: 16,
+                backgroundColor: showGlow ? glowColor : 'transparent',
+                padding: showGlow ? 4 : 0
+              }}>
+                {showGlow && (
+                  <View style={styles.nextStopBadge}>
+                     <FontAwesome name="map-marker" size={10} color="#fff" />
+                     <Text style={styles.nextStopText}>SIRADAKİ DURAK</Text>
+                  </View>
+                )}
+                <QrBlock
+                  label="Restoran Giriş"
+                  sublabel={ticket.restaurantInfo?.name ?? 'Anlaşmalı Restoran'}
+                  qrValue={ticket.restaurantQrData}
+                  color="#f97316"
+                  icon="cutlery"
+                  badgeText="YEMEK"
+                  badgeColor="#ea580c"
+                  redeemed={localMealRedeemed}
+                  onRedeemPress={handleMealRedeem}
+                  redeemLoading={mealRedeemLoading}
+                />
+              </Animated.View>
+            </View>
+          </View>
         )}
       </View>
 
@@ -523,17 +535,43 @@ const styles = StyleSheet.create({
     marginRight: -7,
   },
 
-  // QR alanı
-  qrSection: {
-    padding: 14,
+  // Timeline Styles
+  timelineContainer: {
+    padding: 20,
     backgroundColor: '#f8fafc',
   },
-  qrSectionSingle: {
-    // Tek QR: ortalanmış
-  },
-  qrSectionDual: {
+  timelineItem: {
     flexDirection: 'row',
-    gap: 10,
+  },
+  timelineLeft: {
+    width: 60,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  timelineTime: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  timelineDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 3,
+    borderColor: '#fff',
+    zIndex: 2,
+  },
+  timelineLine: {
+    position: 'absolute',
+    top: 25,
+    width: 2,
+    backgroundColor: '#e2e8f0',
+    zIndex: 1,
+  },
+  timelineRight: {
+    flex: 1,
+    paddingLeft: 10,
   },
 
   // Footer

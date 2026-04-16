@@ -34,6 +34,7 @@ export interface Tour {
   gallery?: TourImage[];
   hasHotelPickup?: boolean;
   meetingPoint?: { lat: number; lng: number; address: string };
+  vipPerks?: string[];
   lastBookedAt?: number;
 }
 
@@ -71,7 +72,8 @@ const MOCK_TOURS: Tour[] = [
       { id: 'img1', url: "https://images.unsplash.com/photo-1627894483216-2138af692e32?w=800", isStock: false },
       { id: 'img2', url: "https://images.unsplash.com/photo-1596395819057-afbf19aff3fb?w=800", isStock: false },
       { id: 'img3', url: "https://images.unsplash.com/photo-1640191830172-e5f80b1e1026?w=800", isStock: true }
-    ]
+    ],
+    vipPerks: ["Ücretsiz Kapadokya Kahve İkramı", "Balon Turunda Ön Sıra Garantisi", "Hızlı Check-in ve Transfer Önceliği"]
   },
   { id: '2', title: "Büyük İtalya Turu", duration: "7 Gün, 6 Gece", price: 550, currency: 'EUR', rating: "4.8", image: "https://images.unsplash.com/photo-1541432901042-2b8cbc77d2a8?fit=crop&w=600&q=80", badge: "SON 3 KOLTUK", fomo: "Son 2 saatte 5 kişi aldı", loyaltyPoints: 1815, slug: 'buyuk-italya', isPremiumPartner: false, stockCount: 15, totalReviews: 45, agencyName: "Roma Gezi", isVerifiedAgency: false,
     availabilities: [

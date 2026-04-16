@@ -328,7 +328,7 @@ export default function TourDetailScreen() {
                         selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 && { backgroundColor: '#ef4444' }
                     ]} 
                     disabled={!selectedDate || (selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0)}
-                    onPress={() => router.push(`/checkout/${tour.id}?date=${selectedDate}`)}
+                    onPress={() => router.push(`/checkout/upsell?id=${tour.id}&date=${selectedDate}`)}
                 >
                     <Text style={styles.buyBtnText}>
                         {!selectedDate ? 'Tarih Seçiniz' : (tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 ? 'Kontenjan Dolu - Başka Tarih Seç' : 'Rezervasyon Yap')}

@@ -216,6 +216,57 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
+        {/* ─── Hazır Kombo Paketler (Dikey Kart Tasarımı) ─── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Popüler Kombolar 🏆</Text>
+          <Text style={styles.sectionSubtitle}>Tur ve Lezzet bir arada, daha avantajlı!</Text>
+        </View>
+        <View style={styles.verticalComboSection}>
+          {tours.filter(t => t.price > 1200).slice(0, 3).map((tour, idx) => (
+            <View key={'vcombo-'+tour.id} style={styles.vComboCard}>
+              <View style={styles.vComboImageContainer}>
+                <Image source={{ uri: tour.image }} style={styles.vComboImage} />
+                <View style={styles.vComboIconBadge}>
+                  <Text style={styles.vComboIconText}>🗺️ + 🍽️</Text>
+                </View>
+              </View>
+              
+              <View style={styles.vComboContent}>
+                <Text style={styles.vComboHeader}>{tour.title} + Tourkia Lezzet</Text>
+                <Text style={styles.vComboDesc}>Kapadokya'nın en iyi turu ve en ünlü restoranı bu pakette birleşti.</Text>
+                
+                <View style={styles.vComboPriceRow}>
+                   <View>
+                      <Text style={styles.vComboPriceLabel}>Paket Fiyatı</Text>
+                      <Text style={styles.vComboPrice}>{formatCurrency(getDisplayPrice(tour.price, 'TRY').amount, 'TRY')}</Text>
+                   </View>
+                   <View style={styles.vComboSaveBadge}>
+                      <Text style={styles.vComboSaveText}>%15 TASARRUF</Text>
+                   </View>
+                </View>
+
+                <View style={styles.vComboActionRow}>
+                  <TouchableOpacity 
+                    style={styles.vComboDetailsBtn}
+                    onPress={() => {
+                      setSelectedCombo(tour);
+                      setModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.vComboDetailsText}>İçeriği Gör</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.vComboBuyBtn}
+                    onPress={() => router.push(`/checkout/${tour.id}`)}
+                  >
+                    <Text style={styles.vComboBuyText}>Hemen Al</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
 
 
         {/* Tours / Accommodations Box */}
@@ -526,5 +577,26 @@ const styles = StyleSheet.create({
   featureValue: { fontSize: 14, fontWeight: '700', color: '#334155' },
   sheetDescription: { fontSize: 15, color: '#475569', lineHeight: 22, marginBottom: 30 },
   sheetPrimaryBtn: { backgroundColor: '#0071c2', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#0071c2', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-  sheetPrimaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' }
+  sheetPrimaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+
+  // Vertical Combo Styles
+  verticalComboSection: { paddingHorizontal: 16, marginBottom: 32 },
+  vComboCard: { backgroundColor: '#fff', borderRadius: 24, marginBottom: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#005f80', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 8 },
+  vComboImageContainer: { height: 180, position: 'relative' },
+  vComboImage: { width: '100%', height: '100%' },
+  vComboIconBadge: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, elevation: 4 },
+  vComboIconText: { fontSize: 14, fontWeight: '900' },
+  vComboContent: { padding: 20 },
+  vComboHeader: { fontSize: 18, fontWeight: '900', color: '#0f172a', marginBottom: 8 },
+  vComboDesc: { fontSize: 13, color: '#64748b', lineHeight: 20, marginBottom: 20 },
+  vComboPriceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  vComboPriceLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 },
+  vComboPrice: { fontSize: 24, fontWeight: '900', color: '#0071c2' },
+  vComboSaveBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  vComboSaveText: { color: '#16a34a', fontSize: 11, fontWeight: '800' },
+  vComboActionRow: { flexDirection: 'row', gap: 12 },
+  vComboDetailsBtn: { flex: 1, height: 50, borderRadius: 14, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
+  vComboDetailsText: { color: '#334155', fontSize: 14, fontWeight: '800' },
+  vComboBuyBtn: { flex: 1.5, height: 50, borderRadius: 14, backgroundColor: '#0071c2', justifyContent: 'center', alignItems: 'center', shadowColor: '#0071c2', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  vComboBuyText: { color: '#fff', fontSize: 14, fontWeight: '900' }
 });

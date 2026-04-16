@@ -14,6 +14,7 @@ import {
 import { Camera, CameraView, useCameraPermissions } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Animated, Easing, Dimensions } from 'react-native';
 import { scheduleFeedbackNotification } from '../services/notificationService';
 import { markMealRedeemed } from '../services/offlineStorage';
 
@@ -29,6 +30,20 @@ export default function WaiterDashboard() {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const confettiAnims = React.useRef([...Array(20)].map(() => new Animated.Value(0))).current;
+
+  const startConfetti = () => {
+    confettiAnims.forEach((anim) => anim.setValue(0));
+    const animations = confettiAnims.map((anim) => {
+      return Animated.timing(anim, {
+        toValue: 1,
+        duration: 2000 + Math.random() * 2000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      });
+    });
+    Animated.parallel(animations).start();
+  };
 
   if (!permission) {
     return <View style={styles.loading}><ActivityIndicator size="large" color="#008cb3" /></View>;
@@ -37,10 +52,15 @@ export default function WaiterDashboard() {
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setIsScanning(false);
     try {
-      const parsed = JSON.parse(data);
-      if (parsed.type === 'MEAL_REDEMPTION') {
-        setScannedData(parsed);
+      if (parsed.type === 'MEAL_REDEMPTION' || data.includes('VIP')) {
+        const enhancedData = {
+          ...parsed,
+          isVip: data.includes('VIP') || parsed.isVip,
+          mealDescription: parsed.isVip ? 'VIP ÖZEL TADIM MENÜSÜ' : parsed.mealDescription
+        };
+        setScannedData(enhancedData);
         setModalVisible(true);
+        if (enhancedData.isVip) startConfetti();
       } else {
         Alert.alert('Geçersiz QR', 'Bu bir yemek kuponu değil. Lütfen tur biletindeki yemek QR\'ını tarayın.');
       }
@@ -125,10 +145,54 @@ export default function WaiterDashboard() {
       {/* Menü Detay Modalı (Tam Ekran) */}
       <Modal visible={modalVisible} transparent={false} animationType="fade">
         <View style={styles.modalContent}>
-          <LinearGradient colors={['#f97316', '#ea580c']} style={styles.modalHeader}>
-            <FontAwesome name="check-circle" size={60} color="#fff" />
-            <Text style={styles.modalTitle}>DOĞRULAMA BAŞARILI!</Text>
+          <LinearGradient colors={scannedData?.isVip ? ['#f59e0b', '#d97706'] : ['#f97316', '#ea580c']} style={styles.modalHeader}>
+            <FontAwesome name={scannedData?.isVip ? "diamond" : "check-circle"} size={60} color="#fff" />
+            <Text style={styles.modalTitle}>{scannedData?.isVip ? '💎 VIP MİSAFİR 💎' : 'DOĞRULAMA BAŞARILI!'}</Text>
           </LinearGradient>
+
+          {scannedData?.isVip && (
+            <View style={styles.vipActionBox}>
+              <FontAwesome name="star" size={16} color="#d97706" />
+              <Text style={styles.vipActionText}>Lütfen misafirimize özel ikramını ve önceliğini sunun.</Text>
+            </View>
+          )}
+
+          {/* Confetti Effect Rendering */}
+          {scannedData?.isVip && confettiAnims.map((anim, i) => {
+            const left = Math.random() * 100;
+            const size = 5 + Math.random() * 10;
+            const colors = ['#fbbf24', '#f59e0b', '#fcd34d', '#fff'];
+            const color = colors[i % colors.length];
+            
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.confetti,
+                  {
+                    left: `${left}%`,
+                    width: size,
+                    height: size,
+                    backgroundColor: color,
+                    transform: [
+                      {
+                        translateY: anim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-100, 800],
+                        }),
+                      },
+                      {
+                        rotate: anim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '360deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+            );
+          })}
           
           <View style={styles.modalBody}>
             <Text style={styles.menuLabel}>Müşteri Satın Alımı:</Text>
@@ -221,4 +285,9 @@ const styles = StyleSheet.create({
   menuValue: { fontSize: 15, fontWeight: '700', color: '#9a3412' },
   confirmBtn: { backgroundColor: '#ea580c', height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center', shadowColor: '#ea580c', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
   confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+
+  // VIP Enhancements
+  vipActionBox: { backgroundColor: '#fffbeb', padding: 12, borderRadius: 12, marginHorizontal: 30, marginTop: -25, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#fde68a', zIndex: 10 },
+  vipActionText: { color: '#b45309', fontSize: 13, fontWeight: '800', flex: 1 },
+  confetti: { position: 'absolute', top: 0, zIndex: 99, borderRadius: 2 },
 });

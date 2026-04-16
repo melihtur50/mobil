@@ -1,13 +1,29 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { logout, userRole, login } = useAuth();
+    const shimmerAnim = React.useRef(new Animated.Value(0)).current;
+
+    React.useEffect(() => {
+        Animated.loop(
+            Animated.timing(shimmerAnim, {
+                toValue: 1,
+                duration: 3000,
+                useNativeDriver: false
+            })
+        ).start();
+    }, []);
+
+    const shimmerPos = shimmerAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-300, 600]
+    });
 
     const handleLogout = () => {
         Alert.alert(
@@ -66,26 +82,49 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Loyalty Program - SADECE MÜŞTERİ */}
+                {/* VIP Digital Card - Apple Wallet Style */}
                 {userRole === 'customer' && (
-                    <View style={styles.loyaltyWrapper}>
+                    <TouchableOpacity 
+                        style={styles.vipContainer} 
+                        activeOpacity={0.9}
+                        onPress={() => router.push('/vip-privileges')}
+                    >
                         <LinearGradient
-                            colors={['#008cb3', '#0369a1']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.loyaltyCard}
+                            colors={['#1e293b', '#0f172a']}
+                            style={styles.vipCard}
                         >
-                            <View style={styles.loyaltyTop}>
-                                <View style={styles.loyaltyBadge}>
-                                    <FontAwesome name="star" size={12} color="#005e85" style={{ marginRight: 4 }} />
-                                    <Text style={styles.loyaltyBadgeText}>Sadakat Programı</Text>
-                                </View>
-                                <Text style={styles.pointsText}>1.450 Puan</Text>
+                            {/* Gold Shimmer Overlay */}
+                            <Animated.View style={[styles.shimmerBox, { transform: [{ translateX: shimmerPos }] }]}>
+                                <LinearGradient
+                                    colors={['transparent', 'rgba(251, 191, 36, 0.1)', 'rgba(251, 191, 36, 0.2)', 'rgba(251, 191, 36, 0.1)', 'transparent']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.shimmerGradient}
+                                />
+                            </Animated.View>
+
+                            <View style={styles.vipHeader}>
+                                <Text style={styles.vipBrand}>TOURKIA <Text style={{fontWeight: '300'}}>VIP</Text></Text>
+                                <View style={styles.vipChip} />
                             </View>
-                            <Text style={styles.loyaltyTitle}>TourkiaPuan™</Text>
-                            <Text style={styles.loyaltyDesc}>Mevcut Bakiyeniz: ₺145 İndirim!</Text>
+
+                            <View style={styles.vipBody}>
+                                <Text style={styles.vipLabel}>Ayrıcalıklı Misafir</Text>
+                                <Text style={styles.vipName}>DEMO KULLANICI</Text>
+                                <Text style={styles.vipStatus}>PLATINUM MEMBER</Text>
+                            </View>
+
+                            <View style={styles.vipFooter}>
+                                <View>
+                                    <Text style={styles.vipFooterLabel}>VIP ID</Text>
+                                    <Text style={styles.vipFooterValue}>TK-9921-2024</Text>
+                                </View>
+                                <FontAwesome name="qrcode" size={32} color="rgba(251, 191, 36, 0.8)" />
+                            </View>
+                            
+                            <View style={styles.vipGoldBorder} />
                         </LinearGradient>
-                    </View>
+                    </TouchableOpacity>
                 )}
 
                 <View style={styles.section}>
@@ -199,6 +238,23 @@ const styles = StyleSheet.create({
     
     divider: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 24, marginVertical: 24 },
     
+    // VIP Card Styles
+    vipContainer: { paddingHorizontal: 24, marginBottom: 32 },
+    vipCard: { height: 200, borderRadius: 20, padding: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
+    shimmerBox: { position: 'absolute', top: 0, left: 0, width: 300, height: '200%', transform: [{ rotate: '45deg' }] },
+    shimmerGradient: { width: '100%', height: '100%' },
+    vipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    vipBrand: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
+    vipChip: { width: 40, height: 30, borderRadius: 6, backgroundColor: 'rgba(251, 191, 36, 0.3)', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.5)' },
+    vipBody: { flex: 1, justifyContent: 'center' },
+    vipLabel: { color: '#fbbf24', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 1 },
+    vipName: { color: '#fff', fontSize: 22, fontWeight: '900', marginBottom: 4 },
+    vipStatus: { color: '#94a3b8', fontSize: 12, fontWeight: '700' },
+    vipFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+    vipFooterLabel: { color: '#94a3b8', fontSize: 10, fontWeight: '800', marginBottom: 2 },
+    vipFooterValue: { color: '#fff', fontSize: 14, fontWeight: '700', letterSpacing: 1 },
+    vipGoldBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, backgroundColor: '#fbbf24', opacity: 0.8 },
+
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', paddingVertical: 16, borderRadius: 16 },
     logoutText: { fontSize: 15, fontWeight: '800', color: '#ef4444' }
 });
