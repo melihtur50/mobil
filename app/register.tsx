@@ -13,6 +13,7 @@ export default function RegisterScreen() {
     const isAgency = params.type === 'agency';
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [agencyName, setAgencyName] = useState('');
@@ -132,6 +133,18 @@ export default function RegisterScreen() {
                                         autoCapitalize="none"
                                         value={email}
                                         onChangeText={setEmail}
+                                    />
+                                </View>
+
+                                <View style={styles.inputBox}>
+                                    <FontAwesome name="phone" size={20} color="#64748b" style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input}
+                                        placeholder="Telefon Numarası"
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="phone-pad"
+                                        value={phoneNumber}
+                                        onChangeText={setPhoneNumber}
                                     />
                                 </View>
 

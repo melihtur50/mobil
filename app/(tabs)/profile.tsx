@@ -7,25 +7,70 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { logout, userRole, login } = useAuth();
+    const { logout, userRole, login, isGuest } = useAuth();
     const shimmerAnim = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
-        Animated.loop(
-            Animated.timing(shimmerAnim, {
-                toValue: 1,
-                duration: 3000,
-                useNativeDriver: false
-            })
-        ).start();
-    }, []);
+        if (!isGuest) {
+            Animated.loop(
+                Animated.timing(shimmerAnim, {
+                    toValue: 1,
+                    duration: 3000,
+                    useNativeDriver: false
+                })
+            ).start();
+        }
+    }, [isGuest]);
 
+    // ... (shimmerPos interpolation remains same)
     const shimmerPos = shimmerAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [-300, 600]
     });
 
+    if (isGuest) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <ScrollView contentContainerStyle={styles.guestContent} showsVerticalScrollIndicator={false}>
+                    <View style={styles.guestHeader}>
+                        <View style={styles.guestIconCircle}>
+                            <FontAwesome name="user-circle-o" size={80} color="#003580" />
+                        </View>
+                        <Text style={styles.guestTitle}>Tourkia Dünyasına Hoş Geldiniz</Text>
+                        <Text style={styles.guestSubtitle}>Biletlerinize erişmek, favorilerinizi kaydetmek ve özel fırsatlardan yararlanmak için giriş yapın.</Text>
+                    </View>
+
+                    <View style={styles.guestActions}>
+                        <TouchableOpacity style={styles.guestLoginBtn} onPress={() => router.push('/login')}>
+                            <Text style={styles.guestLoginBtnText}>Giriş Yap</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.guestRegisterBtn} onPress={() => router.push('/register')}>
+                            <Text style={styles.guestRegisterBtnText}>Şimdi Kayıt Ol</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.guestInfoCards}>
+                        <View style={styles.infoSmallCard}>
+                            <FontAwesome name="ticket" size={20} color="#003580" />
+                            <Text style={styles.infoCardText}>Biletlerim</Text>
+                        </View>
+                        <View style={styles.infoSmallCard}>
+                            <FontAwesome name="heart" size={20} color="#ff4d4d" />
+                            <Text style={styles.infoCardText}>Favorilerim</Text>
+                        </View>
+                        <View style={styles.infoSmallCard}>
+                            <FontAwesome name="star" size={20} color="#febb02" />
+                            <Text style={styles.infoCardText}>VIP Statü</Text>
+                        </View>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+
     const handleLogout = () => {
+        // ... (handleLogout code)
         Alert.alert(
             "Çıkış Yap",
             "Çıkış yapıyorsunuz, emin misiniz?",
@@ -67,17 +112,12 @@ export default function ProfileScreen() {
                         <Text style={styles.name}>{userRole === 'agency' ? 'Demo Acenta' : 'Demo Kullanıcı'}</Text>
                         <Text style={styles.email}>{userRole === 'agency' ? 'acenta@tourkia.com' : 'demo@tourkia.com'}</Text>
                         
-                        {/* HIZLI ROL DEĞİŞTİRİCİ - TEST İÇİN */}
-                        <TouchableOpacity 
-                            style={{ marginTop: 8, backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' }}
-                            onPress={() => login(userRole === 'agency' ? 'customer' : 'agency')}
-                        >
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#008cb3' }}>
-                                Rol Değiştir: {userRole === 'agency' ? 'Acenta 🔄' : 'Müşteri 🔄'}
-                            </Text>
-                        </TouchableOpacity>
+                        <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981', marginRight: 6 }} />
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: '#64748b' }}>Aktif Oturum</Text>
+                        </View>
                     </View>
-                    <TouchableOpacity style={styles.editBtn}>
+                    <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
                         <FontAwesome name="pencil" size={16} color="#008cb3" />
                     </TouchableOpacity>
                 </View>
@@ -256,5 +296,20 @@ const styles = StyleSheet.create({
     vipGoldBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, backgroundColor: '#fbbf24', opacity: 0.8 },
 
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', paddingVertical: 16, borderRadius: 16 },
-    logoutText: { fontSize: 15, fontWeight: '800', color: '#ef4444' }
+    logoutText: { fontSize: 15, fontWeight: '800', color: '#ef4444' },
+
+    // Guest Styles
+    guestContent: { flexGrow: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center', alignItems: 'center' },
+    guestHeader: { alignItems: 'center', marginBottom: 40 },
+    guestIconCircle: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#f0f4f8', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    guestTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', textAlign: 'center', marginBottom: 12 },
+    guestSubtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
+    guestActions: { width: '100%', gap: 12, marginBottom: 48 },
+    guestLoginBtn: { backgroundColor: '#003580', width: '100%', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#003580', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+    guestLoginBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    guestRegisterBtn: { backgroundColor: '#fff', width: '100%', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#f1f5f9' },
+    guestRegisterBtnText: { color: '#0f172a', fontSize: 16, fontWeight: '800' },
+    guestInfoCards: { flexDirection: 'row', gap: 12 },
+    infoSmallCard: { flex: 1, backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
+    infoCardText: { fontSize: 11, fontWeight: '800', color: '#64748b', marginTop: 8, textTransform: 'uppercase' }
 });

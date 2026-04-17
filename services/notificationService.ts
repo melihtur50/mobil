@@ -13,6 +13,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -73,8 +75,9 @@ export async function scheduleMealReminder(ticket: OfflineTicket) {
       sound: true,
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: new Date(triggerTime),
-    },
+    } as Notifications.NotificationTriggerInput,
   });
 
   console.log(`Bildirim planlandı: ${identifier} - Zaman: ${new Date(triggerTime).toLocaleString()}`);
@@ -162,8 +165,9 @@ export async function scheduleFeedbackNotification(restaurantName: string) {
       sound: true,
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: new Date(triggerTime),
-    },
+    } as Notifications.NotificationTriggerInput,
   });
 
   console.log(`Değerlendirme bildirimi planlandı: ${identifier}`);
@@ -175,9 +179,9 @@ export async function scheduleFeedbackNotification(restaurantName: string) {
  */
 export function setupNotificationListeners() {
   const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-    const url = response.notification.request.content.data.url;
+    const url = response.notification.request.content.data.url as string;
     if (url) {
-      if (url.startsWith('tourkia://')) {
+      if (typeof url === 'string' && url.startsWith('tourkia://')) {
         // Uygulama içi yönlendirme logic'i buraya eklenebilir
         // Şimdilik default Linking kullanıyoruz
       }

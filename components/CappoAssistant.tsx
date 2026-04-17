@@ -71,14 +71,15 @@ export default function CappoAssistant() {
 
     return (
         <>
-            {/* Yüzen Buton (Floating Action Button) */}
+            {/* Inline Trigger - Başlıkta Gösterim */}
             <TouchableOpacity style={styles.fab} onPress={toggleAssistant} activeOpacity={0.8}>
                 <View style={styles.fabIconBg}>
-                    <FontAwesome name="magic" size={24} color="#fff" />
+                    <Text style={styles.cappoInsideText}>Cappo</Text>
                 </View>
                 <View style={styles.badge}>
                     <Text style={styles.badgeText}>1</Text>
                 </View>
+                <Text style={styles.assistantLabel}>Yapay Zeka{"\n"}Asistanı</Text>
             </TouchableOpacity>
 
             {/* Asistan Modalı */}
@@ -163,41 +164,53 @@ export default function CappoAssistant() {
 
 const styles = StyleSheet.create({
     fab: {
-        position: 'absolute',
-        bottom: 100, // Sekme çubuğunun (Bottom tab) üstünde kalması için
-        right: 24,
-        width: 60,
-        height: 60,
-        zIndex: 9999,
-        borderRadius: 30,
-        shadowColor: '#4f46e5',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
-        elevation: 8,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     fabIconBg: {
         width: '100%',
         height: '100%',
-        borderRadius: 30,
-        backgroundColor: '#008cb3',
+        borderRadius: 19,
+        backgroundColor: '#febb02', // Altın sarısı (Booking stili ile uyumlu)
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#fff',
+    },
+    cappoInsideText: {
+        color: '#003580',
+        fontSize: 8,
+        fontWeight: '900',
+    },
+    assistantLabel: {
+        position: 'absolute',
+        bottom: -24,
+        fontSize: 9,
+        fontWeight: '900',
+        color: '#fff',
+        width: 80,
+        textAlign: 'center',
+        lineHeight: 10,
+        letterSpacing: -0.2,
     },
     badge: {
         position: 'absolute',
-        top: 0,
-        right: 0,
+        top: -2,
+        right: -2,
         backgroundColor: '#ef4444',
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#fff'
+        borderWidth: 1,
+        borderColor: '#fff',
+        zIndex: 10,
     },
-    badgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+    badgeText: { color: '#fff', fontSize: 7, fontWeight: '900' },
     
     overlay: { flex: 1, justifyContent: 'flex-end' },
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.4)' },

@@ -5,37 +5,47 @@ type UserRole = 'customer' | 'agency';
 
 interface AuthContextType {
     userRole: UserRole;
+    isGuest: boolean;
     isLoading: boolean;
     login: (role?: string) => Promise<void>;
+    loginAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
     userRole: 'customer',
+    isGuest: true,
     isLoading: true,
     login: async () => {},
+    loginAsGuest: async () => {},
     logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [userRole, setUserRole] = useState<UserRole>('customer');
+    const [isGuest, setIsGuest] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        loadUserRole();
+        loadUserStatus();
     }, []);
 
-    const loadUserRole = async () => {
+    const loadUserStatus = async () => {
         try {
             const role = await AsyncStorage.getItem('userRole');
+            const guestStatus = await AsyncStorage.getItem('isGuest');
+            
             if (role === 'agency') {
                 setUserRole('agency');
             } else {
-                setUserRole('customer'); // Default
+                setUserRole('customer');
             }
+
+            setIsGuest(guestStatus === 'false' ? false : true);
         } catch (error) {
-            console.error('Failed to load user role:', error);
+            console.error('Failed to load user status:', error);
             setUserRole('customer');
+            setIsGuest(true);
         } finally {
             setIsLoading(false);
         }
@@ -43,25 +53,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (role?: string) => {
         const finalRole: UserRole = role === 'agency' ? 'agency' : 'customer';
-        setUserRole(finalRole); // Ekranda anında değişmesi için önce State'i güncelliyoruz
+        setUserRole(finalRole);
+        setIsGuest(false);
         try {
             await AsyncStorage.setItem('userRole', finalRole);
+            await AsyncStorage.setItem('isGuest', 'false');
         } catch (error) {
-            console.warn('Failed to save user role (AsyncStorage bridged failed):', error);
+            console.warn('Failed to save user status:', error);
+        }
+    };
+
+    const loginAsGuest = async () => {
+        setUserRole('customer');
+        setIsGuest(true);
+        try {
+            await AsyncStorage.setItem('userRole', 'customer');
+            await AsyncStorage.setItem('isGuest', 'true');
+        } catch (error) {
+            console.warn('Failed to save guest status:', error);
         }
     };
 
     const logout = async () => {
-        setUserRole('customer'); // Çıkış yapınca anında State'i müşteriye çekiyoruz
+        setUserRole('customer');
+        setIsGuest(true);
         try {
             await AsyncStorage.removeItem('userRole');
+            await AsyncStorage.setItem('isGuest', 'true');
         } catch (error) {
-            console.warn('Failed to remove user role (AsyncStorage bridged failed):', error);
+            console.warn('Failed to remove user status:', error);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ userRole, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ userRole, isGuest, isLoading, login, loginAsGuest, logout }}>
             {children}
         </AuthContext.Provider>
     );

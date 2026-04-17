@@ -52,6 +52,7 @@ export default function WaiterDashboard() {
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setIsScanning(false);
     try {
+      const parsed = JSON.parse(data);
       if (parsed.type === 'MEAL_REDEMPTION' || data.includes('VIP')) {
         const enhancedData = {
           ...parsed,

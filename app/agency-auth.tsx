@@ -12,6 +12,12 @@ export default function AgencyAuthScreen() {
     const [activeTab, setActiveTab] = useState<'login' | 'register' | 'premium'>((params.tab as any) || 'login');
     const [isRegistered, setIsRegistered] = useState(false);
 
+    useEffect(() => {
+        if (params.tab) {
+            setActiveTab(params.tab as any);
+        }
+    }, [params.tab]);
+
     // Form states
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -136,10 +142,12 @@ export default function AgencyAuthScreen() {
 
                                     {activeTab === 'register' && (
                                         <View style={styles.formContainer}>
-                                            <Text style={styles.inputLabel}>ACENTA ADI</Text>
+                                            <Text style={styles.inputLabel}>
+                                                {params.type === 'restaurant' ? 'RESTORAN / KAFE ADI' : params.type === 'premium' ? 'PREMIUM İŞLETME ADI' : 'ACENTA ADI'}
+                                            </Text>
                                             <TextInput 
                                                 style={styles.input}
-                                                placeholder="Firma adınızı girin"
+                                                placeholder={params.type === 'restaurant' ? "İşletme adınızı girin" : "Firma adınızı girin"}
                                                 placeholderTextColor="#94a3b8"
                                                 value={agencyName}
                                                 onChangeText={setAgencyName}
@@ -154,12 +162,13 @@ export default function AgencyAuthScreen() {
                                                 onChangeText={setName}
                                             />
 
-                                            <Text style={styles.inputLabel}>TÜRSAB NO (Opsiyonel)</Text>
+                                            <Text style={styles.inputLabel}>
+                                                {params.type === 'restaurant' ? 'VERGİ LEVHASI / RUHSAT NO' : 'TÜRSAB NO'} (Zorunlu)
+                                            </Text>
                                             <TextInput 
                                                 style={styles.input}
-                                                placeholder="Belge Numaranız"
+                                                placeholder={params.type === 'restaurant' ? "Ruhsat veya vergi no girin" : "Belge Numaranız"}
                                                 placeholderTextColor="#94a3b8"
-                                                keyboardType="numeric"
                                                 value={tursabNo}
                                                 onChangeText={setTursabNo}
                                             />
@@ -186,7 +195,9 @@ export default function AgencyAuthScreen() {
                                             />
 
                                             <TouchableOpacity style={styles.submitBtn} onPress={handleRegister}>
-                                                <Text style={styles.submitBtnText}>Kayıt Ol</Text>
+                                                <Text style={styles.submitBtnText}>
+                                                    {params.type === 'restaurant' ? 'İşletmeyi Kaydet' : 'Acentayı Kaydet'}
+                                                </Text>
                                             </TouchableOpacity>
                                         </View>
                                     )}

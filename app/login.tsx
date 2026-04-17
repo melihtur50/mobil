@@ -1,15 +1,16 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ScrollView } from 'react-native';
+import { ImageBackground, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, StatusBar, ScrollView, Modal } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { login, loginAsGuest } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showBusinessModal, setShowBusinessModal] = useState(false);
 
     const handleLogin = async (role: 'customer' | 'agency' = 'customer') => {
         // Oturum açma işlemleri buraya gelecek
@@ -19,6 +20,17 @@ export default function LoginScreen() {
         } else {
             router.replace('/(tabs)');
         }
+    };
+
+    const handleSocialAuth = async (provider: string) => {
+        // Profesyonel sosyal giriş simülasyonu
+        console.log(`${provider} ile giriş başlatıldı...`);
+        // Burada normalde expo-auth-session veya ilgili kütüphane çağrılır
+        // Şimdilik akışın tamamlanmasını simüle ediyoruz
+        setTimeout(async () => {
+            await login('customer');
+            router.replace('/(tabs)');
+        }, 1000);
     };
 
     return (
@@ -69,12 +81,19 @@ export default function LoginScreen() {
                                 </TouchableOpacity>
                             </View>
 
-                            <TouchableOpacity style={styles.forgotBtn}>
+                            <TouchableOpacity style={styles.forgotBtn} onPress={() => router.push('/forgot-password')}>
                                 <Text style={styles.forgotText}>Şifremi Unuttum</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.loginBtn} onPress={() => handleLogin('customer')}>
-                                <Text style={styles.loginBtnText}>Müşteri Olarak Giriş</Text>
+                                <Text style={styles.loginBtnText}>Üye Girişi Yap</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.loginBtn, { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#0071c2', marginTop: 12 }]} 
+                                onPress={() => { loginAsGuest(); router.replace('/(tabs)'); }}
+                            >
+                                <Text style={[styles.loginBtnText, { color: '#0071c2' }]}>Misafir Olarak Devam Et</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={[styles.loginBtn, { backgroundColor: '#0f172a', marginTop: 12 }]} onPress={() => router.push('/agency-auth?tab=login')}>
@@ -87,23 +106,77 @@ export default function LoginScreen() {
                                 <View style={styles.dividerLine} />
                             </View>
 
-                            <TouchableOpacity style={styles.socialBtn}>
-                                <FontAwesome name="google" size={18} color="#ea4335" />
-                                <Text style={styles.socialBtnText}>Google ile Devam Et</Text>
-                            </TouchableOpacity>
+                            <View style={styles.socialAuthRow}>
+                                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => handleSocialAuth('Google')}>
+                                    <FontAwesome name="google" size={22} color="#ea4335" />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => handleSocialAuth('Facebook')}>
+                                    <FontAwesome name="facebook" size={22} color="#1877f2" />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => handleSocialAuth('Apple')}>
+                                    <FontAwesome name="apple" size={24} color="#000" />
+                                </TouchableOpacity>
+                            </View>
 
                             <View style={styles.registerSection}>
                                 <Text style={styles.footerText}>Hesabınız yok mu?</Text>
                                 <TouchableOpacity style={styles.customerRegBtn} onPress={() => router.push('/register')}>
                                     <Text style={styles.customerRegText}>Müşteri Olarak Kaydol</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.agencyRegBtn} onPress={() => router.push('/agency-auth?tab=register')}>
-                                    <Text style={styles.agencyRegText}>Acentayı Sisteme Kaydet</Text>
+                                <TouchableOpacity style={styles.agencyRegBtn} onPress={() => setShowBusinessModal(true)}>
+                                    <Text style={styles.agencyRegText}>İşletmeni Sisteme Kaydet</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
                         </ScrollView>
                     </KeyboardAvoidingView>
+
+                    {/* Business Type Selection Modal */}
+                    <Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => setShowBusinessModal(false)}>
+                        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowBusinessModal(false)}>
+                            <View style={styles.businessModalContent}>
+                                <Text style={styles.businessModalTitle}>İşletme Türünü Seçin</Text>
+                                <Text style={styles.businessModalSubtitle}>Tourkia ekosistemine katılmak için ilk adımı atın.</Text>
+                                
+                                <TouchableOpacity style={styles.businessOption} onPress={() => { setShowBusinessModal(false); router.push('/agency-auth?tab=register&type=restaurant'); }}>
+                                    <View style={[styles.businessIcon, { backgroundColor: '#fff7ed' }]}>
+                                        <FontAwesome name="cutlery" size={20} color="#ea580c" />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.businessName}>Restoran / Kafe</Text>
+                                        <Text style={styles.businessDesc}>Menünüzü sergileyin, rezervasyon alın.</Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.businessOption} onPress={() => { setShowBusinessModal(false); router.push('/agency-auth?tab=register&type=agency'); }}>
+                                    <View style={[styles.businessIcon, { backgroundColor: '#eff6ff' }]}>
+                                        <FontAwesome name="map" size={20} color="#3b82f6" />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.businessName}>Turizm Acentası</Text>
+                                        <Text style={styles.businessDesc}>Turlarınızı binlerce turiste ulaştırın.</Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.businessOption} onPress={() => { setShowBusinessModal(false); router.push('/agency-auth?tab=premium&type=premium'); }}>
+                                    <View style={[styles.businessIcon, { backgroundColor: '#fffbeb' }]}>
+                                        <FontAwesome name="star" size={20} color="#b45309" />
+                                    </View>
+                                    <View>
+                                        <Text style={[styles.businessName, { color: '#b45309' }]}>Premium Partner</Text>
+                                        <Text style={styles.businessDesc}>Özel avantajlar ve VIP görünürlük.</Text>
+                                    </View>
+                                    <View style={styles.premiumBadge}>
+                                        <Text style={styles.premiumBadgeText}>VIP</Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowBusinessModal(false)}>
+                                    <Text style={styles.cancelBtnText}>Vazgeç</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    </Modal>
                 </SafeAreaView>
             </View>
         </ImageBackground>
@@ -139,13 +212,32 @@ const styles = StyleSheet.create({
     dividerLine: { flex: 1, height: 1, backgroundColor: '#e2e8f0' },
     dividerText: { marginHorizontal: 12, fontSize: 12, fontWeight: '800', color: '#94a3b8' },
     
-    socialBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderWidth: 2, borderColor: '#f1f5f9', borderRadius: 16, height: 56 },
-    socialBtnText: { fontSize: 15, fontWeight: '700', color: '#334155', marginLeft: 12 },
+    socialAuthRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+    socialCircleBtn: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', borderWidth: 2, borderColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
     
     registerSection: { alignItems: 'center', marginTop: 24, gap: 10 },
     footerText: { color: '#64748b', fontSize: 14, fontWeight: '500', marginBottom: 4 },
     customerRegBtn: { backgroundColor: '#febb02', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: '100%', alignItems: 'center' },
     customerRegText: { color: '#0f172a', fontSize: 15, fontWeight: '800' },
     agencyRegBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', width: '100%', alignItems: 'center' },
-    agencyRegText: { color: '#64748b', fontSize: 14, fontWeight: '700' }
+    agencyRegText: { color: '#64748b', fontSize: 14, fontWeight: '700' },
+
+    modalOverlay: { 
+        flex: 1, 
+        backgroundColor: 'rgba(0,0,0,0.5)', 
+        justifyContent: 'flex-end' 
+    },
+
+    // Business Modal Styles
+    businessModalContent: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, width: '100%' },
+    businessModalTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8 },
+    businessModalSubtitle: { fontSize: 14, color: '#64748b', marginBottom: 24, fontWeight: '500' },
+    businessOption: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, backgroundColor: '#f8fafc', marginBottom: 12, borderWidth: 1, borderColor: '#f1f5f9' },
+    businessIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+    businessName: { fontSize: 16, fontWeight: '800', color: '#334155' },
+    businessDesc: { fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: '500' },
+    premiumBadge: { marginLeft: 'auto', backgroundColor: '#b45309', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+    premiumBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+    cancelBtn: { marginTop: 12, paddingVertical: 16, alignItems: 'center' },
+    cancelBtnText: { fontSize: 15, fontWeight: '700', color: '#94a3b8' }
 });

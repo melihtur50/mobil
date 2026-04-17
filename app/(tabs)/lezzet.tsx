@@ -183,7 +183,7 @@ function MapCard({
               <Image source={{uri: 'https://i.ibb.co/LhxKkX9/tourkia-favicon.png'}} style={{width: 14, height: 14}} />
               <Text style={mapStyles.miniName} numberOfLines={1}>{r.name}</Text>
             </View>
-            <Text style={mapStyles.miniDist}>📍 {r.dist} km mesafe</Text>
+            <Text style={mapStyles.miniDist}>📍 {r.distance} km mesafe</Text>
             <View style={mapStyles.miniRating}>
               <FontAwesome name="star" size={10} color="#f59e0b" />
               <Text style={mapStyles.miniRatingText}>{r.rating}</Text>
@@ -244,7 +244,7 @@ function RestaurantCard({ item }: { item: any }) {
           </View>
           <View style={styles.distancePill}>
             <FontAwesome name="map-marker" size={12} color="#008cb3" />
-            <Text style={styles.distanceText}> {item.dist} km</Text>
+            <Text style={styles.distanceText}> {item.distance} km</Text>
           </View>
         </View>
 
@@ -294,12 +294,12 @@ export default function LezzetScreen() {
     // 1. Mesafe hesapla ve 5km ile filtrele
     let result = MOCK_RESTAURANTS.map(r => ({
       ...r,
-      dist: calculateDistance(userLocation.lat, userLocation.lng, r.lat, r.lng)
-    })).filter(r => r.dist <= 5);
+      distance: calculateDistance(userLocation.lat, userLocation.lng, r.lat, r.lng)
+    })).filter(r => r.distance <= 5);
 
     // 2. Sırala
     if (filter === 'En Yakın') {
-      result.sort((a, b) => a.dist - b.dist);
+      result.sort((a, b) => a.distance - b.distance);
     } else if (filter === 'En Yüksek Puan') {
       result.sort((a, b) => b.rating - a.rating);
     } else if (filter === 'Açık') {

@@ -36,6 +36,9 @@ export interface Tour {
   meetingPoint?: { lat: number; lng: number; address: string };
   vipPerks?: string[];
   lastBookedAt?: number;
+  fomo?: string;
+  loyaltyPoints?: number;
+  slug?: string;
 }
 
 export interface Destination {

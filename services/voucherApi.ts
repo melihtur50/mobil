@@ -97,8 +97,6 @@ export const redeemMealVoucher = async (payload: MealRedeemPayload): Promise<Red
       message: `Yemek hakediş kodu aktive edildi! ${payload.guests} kişilik Tourkia Özel Menü onaylandı. Afiyet olsun! 🍽️`,
       data: {
         endpoint: `${BASE_URL}/vouchers/meal-redeem`,
-        restaurantId: payload.restaurantId,
-        guests: payload.guests,
         ...payload,
       },
     };

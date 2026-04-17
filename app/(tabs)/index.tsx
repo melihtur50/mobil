@@ -2,7 +2,11 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, TextInput, Modal, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Category, Destination, fetchCategories, fetchDestinations, fetchTours, Tour, subscribeTours, getDisplayPrice, formatCurrency } from '../../services/tourApi';
+import CappoAssistant from '../../components/CappoAssistant';
+import ProfessionalDatePicker from '../../components/ProfessionalDatePicker';
+import GuestPicker from '../../components/GuestPicker';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -16,12 +20,17 @@ export default function HomeScreen() {
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
   const [selectedCombo, setSelectedCombo] = useState<Tour | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [searchDate, setSearchDate] = useState<Date>(new Date());
+  const [guestPickerVisible, setGuestPickerVisible] = useState(false);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
 
   const filteredTours = tours.filter(tour => {
     const term = searchText.toLowerCase();
     // Extended filtering to match "ATV", "Balon", "Gün Doğumu" specifically to Cappadocia tours for extra immersion
     const isSpecialKeyword = (term.includes('atv') || term.includes('balon') || term.includes('doğumu')) && tour.title.toLowerCase().includes('kapadokya');
-    return tour.title.toLowerCase().includes(term) || tour.slug.toLowerCase().includes(term) || isSpecialKeyword;
+    return tour.title.toLowerCase().includes(term) || (tour.slug || '').toLowerCase().includes(term) || isSpecialKeyword;
   });
 
   useEffect(() => {
@@ -71,9 +80,12 @@ export default function HomeScreen() {
           {/* Logo & Icons */}
           <View style={styles.headerTop}>
             <Text style={styles.brandTitle}>Tourkia.com</Text>
-            <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.iconBtn}><FontAwesome name="bell-o" size={20} color="#fff" /></TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn}><FontAwesome name="user-o" size={20} color="#fff" /></TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+              <CappoAssistant />
+              <View style={styles.headerIcons}>
+                <TouchableOpacity style={styles.iconBtn}><FontAwesome name="bell-o" size={20} color="#fff" /></TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn}><FontAwesome name="user-o" size={20} color="#fff" /></TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -111,15 +123,28 @@ export default function HomeScreen() {
               <View style={styles.dropdownContainer}>
                 {searchText.length === 0 ? (
                   <>
-                    <Text style={styles.dropdownTitle}>HIZLI ERİŞİM</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <FontAwesome name="line-chart" size={14} color="#0071c2" style={{ marginRight: 8 }} />
+                      <Text style={styles.dropdownTitle}>BUGÜN EN ÇOK ARANANLAR</Text>
+                    </View>
                     <View style={styles.quickAccessTags}>
-                      {['Kapadokya', 'Balon', 'ATV', 'Gün Doğumu', 'İtalya'].map(tag => (
-                        <TouchableOpacity key={tag} style={styles.tagBtn} onPress={() => setSearchText(tag)}>
-                          <Text style={styles.tagText}>{tag}</Text>
+                      {[
+                        { label: 'Kapadokya', pop: true },
+                        { label: 'Balon Turu', pop: true },
+                        { label: 'ATV Safari', pop: false },
+                        { label: 'Gün Doğumu', pop: true },
+                        { label: 'İtalya', pop: false },
+                        { label: 'Günübirlik', pop: false }
+                      ].map(item => (
+                        <TouchableOpacity key={item.label} style={styles.tagBtn} onPress={() => setSearchText(item.label)}>
+                          {item.pop && <FontAwesome name="fire" size={12} color="#ff4d4d" style={{ marginRight: 4 }} />}
+                          <Text style={styles.tagText}>{item.label}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    <Text style={styles.dropdownTitle}>SON ARANANLAR</Text>
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={styles.dropdownTitle}>SON ARANANLAR</Text>
+                    </View>
                     {tours.slice(0, 2).map(tour => (
                       <TouchableOpacity key={'recent-'+tour.id} style={styles.dropdownItem} onPress={() => router.push(`/tour/${tour.id}`)}>
                         <FontAwesome name="history" size={16} color="#666" style={{ width: 24, textAlign: 'center' }} />
@@ -147,16 +172,18 @@ export default function HomeScreen() {
             <View style={styles.formDivider} />
             
             {/* Dates */}
-            <TouchableOpacity style={styles.formRow}>
+            <TouchableOpacity style={styles.formRow} onPress={() => setDatePickerVisible(true)}>
               <FontAwesome name="calendar-o" size={20} color="#333" style={styles.formIcon} />
-              <Text style={styles.formText}>15 Eyl Paz - 18 Eyl Çar</Text>
+              <Text style={styles.formText}>
+                {searchDate.getDate()} {['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][searchDate.getMonth()]} {searchDate.getFullYear()}
+              </Text>
             </TouchableOpacity>
             <View style={styles.formDivider} />
             
             {/* Guests */}
-            <TouchableOpacity style={styles.formRow}>
+            <TouchableOpacity style={styles.formRow} onPress={() => setGuestPickerVisible(true)}>
               <FontAwesome name="user-o" size={20} color="#333" style={styles.formIcon} />
-              <Text style={styles.formText}>2 yetişkin · 0 çocuk · 1 oda</Text>
+              <Text style={styles.formText}>{adults} yetişkin · {children} çocuk</Text>
             </TouchableOpacity>
 
             {/* Giant Yellow Search Button */}
@@ -164,8 +191,6 @@ export default function HomeScreen() {
               <Text style={styles.searchButtonText}>Ara</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
         </View>
 
         {/* ─── Kombo Paketler Carousel ─── */}
@@ -447,6 +472,24 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <ProfessionalDatePicker 
+        visible={datePickerVisible}
+        onClose={() => setDatePickerVisible(false)}
+        onSelectDate={(date) => setSearchDate(date)}
+        initialDate={searchDate}
+      />
+
+      <GuestPicker 
+        visible={guestPickerVisible}
+        onClose={() => setGuestPickerVisible(false)}
+        onConfirm={(a, c) => {
+          setAdults(a);
+          setChildren(c);
+        }}
+        initialAdults={adults}
+        initialChildren={children}
+      />
     </View>
   );
 }
@@ -483,7 +526,18 @@ const styles = StyleSheet.create({
   dropdownContainer: { backgroundColor: '#fff', padding: 16 },
   dropdownTitle: { fontSize: 11, fontWeight: '800', color: '#94a3b8', marginBottom: 12, marginTop: 8, letterSpacing: 0.5 },
   quickAccessTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  tagBtn: { backgroundColor: '#f1f5f9', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0' },
+  tagBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
   tagText: { fontSize: 13, color: '#334155', fontWeight: '700' },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#f1f5f9' },
   dropdownItemText: { fontSize: 15, color: '#334155', fontWeight: '700', flex: 1 },

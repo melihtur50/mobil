@@ -327,7 +327,7 @@ export default function TourDetailScreen() {
                         !selectedDate && { backgroundColor: '#cbd5e1' },
                         selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 && { backgroundColor: '#ef4444' }
                     ]} 
-                    disabled={!selectedDate || (selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0)}
+                    disabled={!selectedDate || !!(selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0)}
                     onPress={() => router.push(`/checkout/upsell?id=${tour.id}&date=${selectedDate}`)}
                 >
                     <Text style={styles.buyBtnText}>

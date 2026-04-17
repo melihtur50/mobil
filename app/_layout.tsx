@@ -40,7 +40,6 @@ export default function RootLayout() {
             <Stack.Screen name="agency-auth" options={{ headerShown: false, presentation: 'modal' }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          {!hideCappo && <CappoAssistant />}
         </View>
         <StatusBar style="auto" />
       </ThemeProvider>
