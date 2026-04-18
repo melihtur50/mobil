@@ -1,7 +1,9 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Colors, BorderRadius, Spacing, Shadows } from '../constants/theme';
+import { AnimatedButton } from './common/AnimatedButton';
 
 export default function CappoAssistant() {
     const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +13,29 @@ export default function CappoAssistant() {
     ]);
     const router = useRouter();
     const slideAnim = useRef(new Animated.Value(0)).current;
+    
+    // Floating Pulse Animation
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        const startPulse = () => {
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(pulseAnim, {
+                toValue: 1.1,
+                duration: 1500,
+                useNativeDriver: true,
+              }),
+              Animated.timing(pulseAnim, {
+                toValue: 1,
+                duration: 1500,
+                useNativeDriver: true,
+              })
+            ])
+          ).start();
+        };
+        startPulse();
+    }, []);
 
     const toggleAssistant = () => {
         if (!isOpen) {
@@ -34,7 +59,7 @@ export default function CappoAssistant() {
             router.push('/(tabs)/explore');
             toggleAssistant();
         } else if (action === 'tickets') {
-            router.push('/offline-tickets');
+            router.push('/tickets');
             toggleAssistant();
         } else if (action === 'orders') {
             router.push('/past-orders');
@@ -71,16 +96,20 @@ export default function CappoAssistant() {
 
     return (
         <>
-            {/* Inline Trigger - Başlıkta Gösterim */}
-            <TouchableOpacity style={styles.fab} onPress={toggleAssistant} activeOpacity={0.8}>
-                <View style={styles.fabIconBg}>
-                    <Text style={styles.cappoInsideText}>Cappo</Text>
-                </View>
-                <View style={styles.badge}>
-                    <Text style={styles.badgeText}>1</Text>
-                </View>
-                <Text style={styles.assistantLabel}>Yapay Zeka{"\n"}Asistanı</Text>
-            </TouchableOpacity>
+            {/* Pulsing FAB Trigger */}
+            <View style={{ alignItems: 'center' }}>
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                    <TouchableOpacity style={styles.fab} onPress={toggleAssistant} activeOpacity={0.8}>
+                        <View style={styles.fabIconBg}>
+                            <Text style={styles.cappoInsideText}>Cappo</Text>
+                        </View>
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>1</Text>
+                        </View>
+                    </TouchableOpacity>
+                </Animated.View>
+                <Text style={styles.aiLabel}>Yapay Zeka</Text>
+            </View>
 
             {/* Asistan Modalı */}
             <Modal transparent visible={isOpen} animationType="none" onRequestClose={toggleAssistant}>
@@ -96,15 +125,15 @@ export default function CappoAssistant() {
                         <View style={styles.header}>
                             <View style={styles.headerTitleRow}>
                                 <View style={styles.botAvatar}>
-                                    <FontAwesome name="android" size={24} color="#008cb3" />
+                                    <FontAwesome name="android" size={24} color={Colors.light.secondary} />
                                 </View>
                                 <View>
                                     <Text style={styles.title}>Cappo (AI)</Text>
-                                    <Text style={styles.statusText}>Çevrimiçi</Text>
+                                    <Text style={styles.statusText}>Sizin için burada</Text>
                                 </View>
                             </View>
                             <TouchableOpacity onPress={toggleAssistant} style={styles.closeBtn}>
-                                <FontAwesome name="close" size={20} color="#64748b" />
+                                <FontAwesome name="close" size={20} color={Colors.light.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -118,22 +147,22 @@ export default function CappoAssistant() {
                                 </View>
                             ))}
 
-                            {/* Hızlı Aksiyon Yonga (Chip)ları */}
+                            {/* Hızlı Aksiyonlar */}
                             {messages.length === 1 && (
                                 <View style={styles.actionsBox}>
-                                    <Text style={styles.actionsHint}>Hızlıca yönlendireyim:</Text>
+                                    <Text style={styles.actionsHint}>Nasıl yardımcı olayım?</Text>
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                                         <TouchableOpacity style={styles.chip} onPress={() => handleAction('explore')}>
-                                            <FontAwesome name="compass" size={14} color="#008cb3" />
-                                            <Text style={styles.chipText}>Turları Keşfet</Text>
+                                            <FontAwesome name="compass" size={14} color={Colors.light.secondary} />
+                                            <Text style={styles.chipText}>Keşfet</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={styles.chip} onPress={() => handleAction('tickets')}>
-                                            <FontAwesome name="qrcode" size={14} color="#008cb3" />
-                                            <Text style={styles.chipText}>Biletlerim</Text>
+                                            <FontAwesome name="ticket" size={14} color={Colors.light.secondary} />
+                                            <Text style={styles.chipText}>Biletler</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={styles.chip} onPress={() => handleAction('orders')}>
-                                            <FontAwesome name="suitcase" size={14} color="#008cb3" />
-                                            <Text style={styles.chipText}>Siparişlerim</Text>
+                                            <FontAwesome name="history" size={14} color={Colors.light.secondary} />
+                                            <Text style={styles.chipText}>Geçmiş</Text>
                                         </TouchableOpacity>
                                     </ScrollView>
                                 </View>
@@ -147,12 +176,12 @@ export default function CappoAssistant() {
                                 value={inputText} 
                                 onChangeText={setInputText}
                                 placeholder="Cappo'ya bir şey yaz..."
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={Colors.light.textMuted}
                                 onSubmitEditing={sendMessage}
                             />
-                            <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-                                <FontAwesome name="paper-plane" size={18} color="#fff" />
-                            </TouchableOpacity>
+                            <AnimatedButton style={styles.sendBtn} onPress={sendMessage} haptic="medium">
+                                <FontAwesome name="paper-plane" size={18} color={Colors.light.primary} />
+                            </AnimatedButton>
                         </View>
 
                     </Animated.View>
@@ -164,80 +193,75 @@ export default function CappoAssistant() {
 
 const styles = StyleSheet.create({
     fab: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: Colors.light.secondary,
+        ...Shadows.md,
     },
     fabIconBg: {
         width: '100%',
         height: '100%',
-        borderRadius: 19,
-        backgroundColor: '#febb02', // Altın sarısı (Booking stili ile uyumlu)
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#fff',
     },
     cappoInsideText: {
-        color: '#003580',
-        fontSize: 8,
+        color: Colors.light.primary,
+        fontSize: 10,
         fontWeight: '900',
-    },
-    assistantLabel: {
-        position: 'absolute',
-        bottom: -24,
-        fontSize: 9,
-        fontWeight: '900',
-        color: '#fff',
-        width: 80,
-        textAlign: 'center',
-        lineHeight: 10,
-        letterSpacing: -0.2,
     },
     badge: {
         position: 'absolute',
         top: -2,
         right: -2,
-        backgroundColor: '#ef4444',
-        width: 14,
-        height: 14,
-        borderRadius: 7,
+        backgroundColor: Colors.light.accent,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#fff',
-        zIndex: 10,
+        borderWidth: 2,
+        borderColor: Colors.light.primary,
     },
-    badgeText: { color: '#fff', fontSize: 7, fontWeight: '900' },
+    badgeText: { color: '#fff', fontSize: 8, fontWeight: '900' },
     
     overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.4)' },
-    container: { backgroundColor: '#f8fafc', borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
+    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 26, 51, 0.6)' },
+    container: { backgroundColor: Colors.light.surface, borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '85%', ...Shadows.lg },
     
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingBottom: 16, backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.lg, backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, borderBottomWidth: 1, borderBottomColor: Colors.light.border },
     headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
-    botAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#e0f2fe', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-    title: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
-    statusText: { fontSize: 12, fontWeight: '700', color: '#10b981', marginTop: 2 },
-    closeBtn: { width: 40, height: 40, backgroundColor: '#f1f5f9', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    botAvatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: Colors.light.background, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+    title: { fontSize: 18, fontWeight: '900', color: Colors.light.primary },
+    statusText: { fontSize: 13, fontWeight: '700', color: Colors.light.success, marginTop: 2 },
+    closeBtn: { width: 40, height: 40, backgroundColor: Colors.light.background, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     
-    chatArea: { flex: 1, padding: 20 },
-    bubbleWrap: { maxWidth: '80%', padding: 16, borderRadius: 20, marginBottom: 12 },
-    bubbleBot: { alignSelf: 'flex-start', backgroundColor: '#fff', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-    bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#008cb3', borderBottomRightRadius: 4 },
+    chatArea: { flex: 1, padding: Spacing.lg },
+    bubbleWrap: { maxWidth: '85%', padding: 16, borderRadius: 20, marginBottom: 16 },
+    bubbleBot: { alignSelf: 'flex-start', backgroundColor: '#fff', borderBottomLeftRadius: 4, ...Shadows.sm },
+    bubbleUser: { alignSelf: 'flex-end', backgroundColor: Colors.light.primary, borderBottomRightRadius: 4 },
     msgText: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
-    msgTextBot: { color: '#334155' },
+    msgTextBot: { color: Colors.light.text },
     msgTextUser: { color: '#fff' },
     
     actionsBox: { marginTop: 12, marginBottom: 24 },
-    actionsHint: { fontSize: 12, fontWeight: '700', color: '#94a3b8', marginBottom: 12, marginLeft: 4 },
+    actionsHint: { fontSize: 12, fontWeight: '700', color: Colors.light.textMuted, marginBottom: 12 },
     chipScroll: { flexDirection: 'row' },
-    chip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f9ff', borderWidth: 1, borderColor: '#bae6fd', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, marginRight: 12 },
-    chipText: { fontSize: 13, fontWeight: '800', color: '#008cb3', marginLeft: 8 },
+    chip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.light.border, paddingHorizontal: 16, paddingVertical: 10, borderRadius: BorderRadius.md, marginRight: 12 },
+    chipText: { fontSize: 13, fontWeight: '800', color: Colors.light.primary, marginLeft: 8 },
     
-    inputArea: { flexDirection: 'row', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-    input: { flex: 1, backgroundColor: '#f1f5f9', paddingHorizontal: 20, height: 50, borderRadius: 25, fontSize: 15, fontWeight: '500', color: '#0f172a' },
-    sendBtn: { width: 50, height: 50, backgroundColor: '#008cb3', borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginLeft: 12, shadowColor: '#008cb3', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }
+    inputArea: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: Colors.light.border },
+    input: { flex: 1, backgroundColor: Colors.light.background, paddingHorizontal: 20, height: 54, borderRadius: 27, fontSize: 15, fontWeight: '600', color: Colors.light.primary },
+    sendBtn: { width: 54, height: 54, backgroundColor: Colors.light.secondary, borderRadius: 27, justifyContent: 'center', alignItems: 'center', marginLeft: 12, ...Shadows.md },
+    aiLabel: {
+        fontSize: 7.5,
+        fontWeight: '900',
+        color: 'rgba(255,255,255,0.7)',
+        textTransform: 'uppercase',
+        marginTop: 4,
+        letterSpacing: 0.5,
+    }
 });

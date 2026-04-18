@@ -19,95 +19,9 @@ import * as Location from 'expo-location';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { setupRestaurantGeofencing } from '../../services/notificationService';
+import { fetchRestaurants, Restaurant } from '../../services/tourApi';
 
-// ─── Mock data: Anlaşmalı restoranlar (gerçek API bağlantısına geçiş için burası güncellenir) ───
-const MOCK_RESTAURANTS = [
-  {
-    id: '1',
-    name: 'Cappadocia Sofra',
-    cuisine: 'Türk Mutfağı',
-    distance: 0.3,
-    rating: 4.8,
-    reviewCount: 212,
-    address: 'Nevşehir Sok. No:5, Göreme',
-    phone: '+905551112233',
-    lat: 38.6431,
-    lng: 34.8307,
-    priceLevel: '₺₺',
-    openNow: true,
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=220&fit=crop',
-    specialDish: 'Testi Kebabı',
-    tourkiaDiscount: 15,
-  },
-  {
-    id: '2',
-    name: 'Lav Steakhouse',
-    cuisine: 'Izgara & Et',
-    distance: 0.7,
-    rating: 4.6,
-    reviewCount: 178,
-    address: 'Merkez Cad. No:12, Ürgüp',
-    phone: '+905554445566',
-    lat: 38.6325,
-    lng: 34.9147,
-    priceLevel: '₺₺₺',
-    openNow: true,
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=220&fit=crop',
-    specialDish: 'Kuzu Tandır',
-    tourkiaDiscount: 10,
-  },
-  {
-    id: '3',
-    name: 'Panorama Café & Bistro',
-    cuisine: 'Akdeniz & Fusion',
-    distance: 1.2,
-    rating: 4.5,
-    reviewCount: 340,
-    address: 'Balon Sok. No:3, Uçhisar',
-    phone: '+905552223344',
-    lat: 38.6254,
-    lng: 34.8038,
-    priceLevel: '₺₺',
-    openNow: false,
-    image: 'https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=400&h=220&fit=crop',
-    specialDish: 'Zeytinyağlı Tabak',
-    tourkiaDiscount: 20,
-  },
-  {
-    id: '4',
-    name: 'Derinkuyu Meze Evi',
-    cuisine: 'Meze & Rakı Sofrası',
-    distance: 2.1,
-    rating: 4.7,
-    reviewCount: 95,
-    address: 'Yeraltı Cad. No:8, Derinkuyu',
-    phone: '+905557778899',
-    lat: 38.3763,
-    lng: 34.7339,
-    priceLevel: '₺₺',
-    openNow: true,
-    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=220&fit=crop',
-    specialDish: 'Kapadokya Mezesi',
-    tourkiaDiscount: 12,
-  },
-  {
-    id: '5',
-    name: 'Silk Road Kitchen',
-    cuisine: 'Orta Doğu & Türk',
-    distance: 2.8,
-    rating: 4.4,
-    reviewCount: 127,
-    address: 'İpek Yolu No:17, Avanos',
-    phone: '+905553334455',
-    lat: 38.7149,
-    lng: 34.8457,
-    priceLevel: '₺₺',
-    openNow: true,
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=220&fit=crop',
-    specialDish: 'Mantu & Ayran',
-    tourkiaDiscount: 18,
-  },
-];
+// Restoranlar artık tourApi.ts dosyasından çekiliyor.
 
 type ViewMode = 'list' | 'map';
 
@@ -132,7 +46,7 @@ function MapCard({
   userLat,
   userLng,
 }: {
-  restaurants: typeof MOCK_RESTAURANTS;
+  restaurants: Restaurant[];
   userLat: number;
   userLng: number;
 }) {
@@ -262,7 +176,8 @@ export default function LezzetScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [locationStatus, setLocationStatus] = useState<'loading' | 'granted' | 'denied'>('loading');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>('En Yakın');
   const toggleAnim = useRef(new Animated.Value(0)).current;
 
@@ -270,6 +185,9 @@ export default function LezzetScreen() {
 
   useEffect(() => {
     (async () => {
+      const restaurants = await fetchRestaurants();
+      setAllRestaurants(restaurants);
+      
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setLocationStatus('denied');
@@ -292,7 +210,7 @@ export default function LezzetScreen() {
     if (!userLocation) return;
 
     // 1. Mesafe hesapla ve 5km ile filtrele
-    let result = MOCK_RESTAURANTS.map(r => ({
+    let result = allRestaurants.map(r => ({
       ...r,
       distance: calculateDistance(userLocation.lat, userLocation.lng, r.lat, r.lng)
     })).filter(r => r.distance <= 5);

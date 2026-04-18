@@ -1,13 +1,17 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useAppContext } from '../../context/AppContext';
+import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
+import { AnimatedButton } from '../../components/common/AnimatedButton';
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { logout, userRole, login, isGuest } = useAuth();
+    const { logout, userRole, isGuest } = useAuth();
+    const { language, setLanguage, currency, setCurrency, t } = useAppContext();
     const shimmerAnim = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
@@ -16,13 +20,12 @@ export default function ProfileScreen() {
                 Animated.timing(shimmerAnim, {
                     toValue: 1,
                     duration: 3000,
-                    useNativeDriver: false
+                    useNativeDriver: true
                 })
             ).start();
         }
     }, [isGuest]);
 
-    // ... (shimmerPos interpolation remains same)
     const shimmerPos = shimmerAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [-300, 600]
@@ -34,33 +37,33 @@ export default function ProfileScreen() {
                 <ScrollView contentContainerStyle={styles.guestContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.guestHeader}>
                         <View style={styles.guestIconCircle}>
-                            <FontAwesome name="user-circle-o" size={80} color="#003580" />
+                            <FontAwesome name="user-circle-o" size={80} color={Colors.light.primary} />
                         </View>
                         <Text style={styles.guestTitle}>Tourkia Dünyasına Hoş Geldiniz</Text>
                         <Text style={styles.guestSubtitle}>Biletlerinize erişmek, favorilerinizi kaydetmek ve özel fırsatlardan yararlanmak için giriş yapın.</Text>
                     </View>
 
                     <View style={styles.guestActions}>
-                        <TouchableOpacity style={styles.guestLoginBtn} onPress={() => router.push('/login')}>
+                        <AnimatedButton style={styles.guestLoginBtn} onPress={() => router.push('/login')} haptic="medium">
                             <Text style={styles.guestLoginBtnText}>Giriş Yap</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
 
-                        <TouchableOpacity style={styles.guestRegisterBtn} onPress={() => router.push('/register')}>
+                        <AnimatedButton style={styles.guestRegisterBtn} onPress={() => router.push('/register')} haptic="medium">
                             <Text style={styles.guestRegisterBtnText}>Şimdi Kayıt Ol</Text>
-                        </TouchableOpacity>
+                        </AnimatedButton>
                     </View>
 
                     <View style={styles.guestInfoCards}>
                         <View style={styles.infoSmallCard}>
-                            <FontAwesome name="ticket" size={20} color="#003580" />
+                            <FontAwesome name="ticket" size={20} color={Colors.light.primary} />
                             <Text style={styles.infoCardText}>Biletlerim</Text>
                         </View>
                         <View style={styles.infoSmallCard}>
-                            <FontAwesome name="heart" size={20} color="#ff4d4d" />
+                            <FontAwesome name="heart" size={20} color={Colors.light.accent} />
                             <Text style={styles.infoCardText}>Favorilerim</Text>
                         </View>
                         <View style={styles.infoSmallCard}>
-                            <FontAwesome name="star" size={20} color="#febb02" />
+                            <FontAwesome name="star" size={20} color={Colors.light.secondary} />
                             <Text style={styles.infoCardText}>VIP Statü</Text>
                         </View>
                     </View>
@@ -70,7 +73,6 @@ export default function ProfileScreen() {
     }
 
     const handleLogout = () => {
-        // ... (handleLogout code)
         Alert.alert(
             "Çıkış Yap",
             "Çıkış yapıyorsunuz, emin misiniz?",
@@ -88,55 +90,51 @@ export default function ProfileScreen() {
         );
     };
 
-    const agencyMenuItems = [
-        { title: 'Genel Bakış', icon: 'dashboard', color: '#0f172a', route: '/dashboard' },
-        { title: 'Rezervasyonlar', icon: 'check-square-o', color: '#3b82f6', route: '/bookings' },
-        { title: 'Turlarım & Yönetim', icon: 'globe', color: '#10b981', route: '/my-tours' },
-        { title: 'Operasyon & Chat', icon: 'comments-o', color: '#f59e0b', route: '/chats' },
-        { title: 'Hızlı Tur Satışı', icon: 'plus', color: '#6366f1', route: '/quick-book' },
-        { title: 'Finans & Fatura', icon: 'money', color: '#14b8a6', route: '/finance' },
-        { title: 'B2B Kampanyalar', icon: 'star-o', color: '#f43f5e', route: '/deals' },
-        { title: 'İçerik (Blog Yönetimi)', icon: 'edit', color: '#4f46e5', route: '/blog' }
-    ];
+    const MenuItem = ({ title, icon, color, route, secondaryIcon }: any) => (
+      <AnimatedButton style={styles.menuItem} onPress={() => route && router.push(route)} haptic="light">
+          <View style={[styles.menuIconBox, { backgroundColor: color + '10' }]}>
+              <FontAwesome name={icon} size={16} color={color} />
+          </View>
+          <Text style={styles.menuText}>{title}</Text>
+          <FontAwesome name={secondaryIcon || "chevron-right"} size={12} color={Colors.light.border} />
+      </AnimatedButton>
+    );
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false} bounces={false}>
 
                 <View style={styles.header}>
-                    <Image
-                        source={{ uri: userRole === 'agency' ? 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=200&q=80' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80' }}
-                        style={styles.avatar}
-                    />
+                    <View style={styles.avatarWrapper}>
+                      <Image
+                          source={{ uri: userRole === 'agency' ? 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=200&q=80' : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80' }}
+                          style={styles.avatar}
+                      />
+                      <View style={styles.activeStatus} />
+                    </View>
                     <View style={styles.headerInfo}>
                         <Text style={styles.name}>{userRole === 'agency' ? 'Demo Acenta' : 'Demo Kullanıcı'}</Text>
                         <Text style={styles.email}>{userRole === 'agency' ? 'acenta@tourkia.com' : 'demo@tourkia.com'}</Text>
-                        
-                        <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
-                            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981', marginRight: 6 }} />
-                            <Text style={{ fontSize: 12, fontWeight: '600', color: '#64748b' }}>Aktif Oturum</Text>
-                        </View>
                     </View>
-                    <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-                        <FontAwesome name="pencil" size={16} color="#008cb3" />
-                    </TouchableOpacity>
+                    <AnimatedButton style={styles.editBtn} onPress={() => router.push('/edit-profile')} haptic="medium">
+                        <FontAwesome name="pencil" size={16} color={Colors.light.primary} />
+                    </AnimatedButton>
                 </View>
 
-                {/* VIP Digital Card - Apple Wallet Style */}
+                {/* VIP Digital Card */}
                 {userRole === 'customer' && (
-                    <TouchableOpacity 
+                    <AnimatedButton 
                         style={styles.vipContainer} 
-                        activeOpacity={0.9}
                         onPress={() => router.push('/vip-privileges')}
+                        haptic="heavy"
                     >
                         <LinearGradient
-                            colors={['#1e293b', '#0f172a']}
+                            colors={[Colors.light.primary, '#002B55']}
                             style={styles.vipCard}
                         >
-                            {/* Gold Shimmer Overlay */}
                             <Animated.View style={[styles.shimmerBox, { transform: [{ translateX: shimmerPos }] }]}>
                                 <LinearGradient
-                                    colors={['transparent', 'rgba(251, 191, 36, 0.1)', 'rgba(251, 191, 36, 0.2)', 'rgba(251, 191, 36, 0.1)', 'transparent']}
+                                    colors={['transparent', 'rgba(212, 175, 55, 0.05)', 'rgba(212, 175, 55, 0.1)', 'rgba(212, 175, 55, 0.05)', 'transparent']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.shimmerGradient}
@@ -144,104 +142,108 @@ export default function ProfileScreen() {
                             </Animated.View>
 
                             <View style={styles.vipHeader}>
-                                <Text style={styles.vipBrand}>TOURKIA <Text style={{fontWeight: '300'}}>VIP</Text></Text>
-                                <View style={styles.vipChip} />
+                                <Text style={styles.vipBrand}>TOURKIA <Text style={{fontWeight: '300', color: Colors.light.secondary}}>VIP</Text></Text>
+                                <FontAwesome name="check-circle" size={24} color={Colors.light.secondary} />
                             </View>
 
                             <View style={styles.vipBody}>
-                                <Text style={styles.vipLabel}>Ayrıcalıklı Misafir</Text>
+                                <Text style={styles.vipLabel}>Ayrıcalıklı Üye</Text>
                                 <Text style={styles.vipName}>DEMO KULLANICI</Text>
-                                <Text style={styles.vipStatus}>PLATINUM MEMBER</Text>
+                                <Text style={styles.vipStatus}>PLATINUM TIER</Text>
                             </View>
 
                             <View style={styles.vipFooter}>
                                 <View>
-                                    <Text style={styles.vipFooterLabel}>VIP ID</Text>
+                                    <Text style={styles.vipFooterLabel}>ÜYELİK KODU</Text>
                                     <Text style={styles.vipFooterValue}>TK-9921-2024</Text>
                                 </View>
-                                <FontAwesome name="qrcode" size={32} color="rgba(251, 191, 36, 0.8)" />
+                                <FontAwesome name="qrcode" size={32} color={Colors.light.secondary} />
                             </View>
-                            
-                            <View style={styles.vipGoldBorder} />
                         </LinearGradient>
-                    </TouchableOpacity>
+                    </AnimatedButton>
                 )}
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{userRole === 'agency' ? 'Acenta Ayarları' : 'Hesap ve İşlemler'}</Text>
-
-                    <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/edit-profile')}>
-                        <View style={styles.menuIconBox}>
-                            <FontAwesome name="user-o" size={16} color="#008cb3" />
+                    <Text style={styles.sectionTitle}>UYGULAMA AYARLARI</Text>
+                    <View style={styles.cardGroup}>
+                      {/* Language Selector */}
+                      <View style={styles.settingRow}>
+                        <View style={styles.settingInfo}>
+                          <FontAwesome name="language" size={16} color={Colors.light.textMuted} />
+                          <Text style={styles.settingLabel}>{t('language')}</Text>
                         </View>
-                        <Text style={styles.menuText}>{userRole === 'agency' ? 'Kurumsal Profil' : 'Kişisel Bilgilerim'}</Text>
-                        <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                    </TouchableOpacity>
+                        <View style={styles.optionGroup}>
+                          <AnimatedButton 
+                            style={[styles.optionBtn, language === 'tr' && styles.optionActive]} 
+                            onPress={() => setLanguage('tr')}
+                          >
+                            <Text style={[styles.optionText, language === 'tr' && styles.optionTextActive]}>TR</Text>
+                          </AnimatedButton>
+                          <AnimatedButton 
+                            style={[styles.optionBtn, language === 'en' && styles.optionActive]} 
+                            onPress={() => setLanguage('en')}
+                          >
+                            <Text style={[styles.optionText, language === 'en' && styles.optionTextActive]}>EN</Text>
+                          </AnimatedButton>
+                        </View>
+                      </View>
 
-                    {userRole === 'customer' && (
-                        <>
-                            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/offline-tickets')}>
-                                <View style={styles.menuIconBox}>
-                                    <FontAwesome name="qrcode" size={16} color="#008cb3" />
-                                </View>
-                                <Text style={styles.menuText}>Çevrimdışı Biletlerim</Text>
-                                <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/past-orders')}>
-                                <View style={styles.menuIconBox}>
-                                    <FontAwesome name="suitcase" size={16} color="#64748b" />
-                                </View>
-                                <Text style={styles.menuText}>Geçmiş Siparişlerim</Text>
-                                <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                            </TouchableOpacity>
-                        </>
-                    )}
-                </View>
-
-                {/* Acenta Paneli Menüsü - SADECE ACENTA */}
-                {userRole === 'agency' && (
-                    <>
-                        <View style={styles.divider} />
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>ACENTA BİLGİ & YÖNETİM</Text>
-
-                            <TouchableOpacity 
-                                style={[styles.menuItem, { backgroundColor: '#fff7ed', borderRadius: 12, paddingHorizontal: 12 }]} 
-                                onPress={() => router.push('/waiter-dashboard')}
+                      {/* Currency Selector */}
+                      <View style={styles.settingRow}>
+                        <View style={styles.settingInfo}>
+                          <FontAwesome name="money" size={16} color={Colors.light.textMuted} />
+                          <Text style={styles.settingLabel}>{t('currency')}</Text>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.optionGroup}>
+                          {['TRY', 'USD', 'EUR', 'GBP'].map((cur: any) => (
+                            <AnimatedButton 
+                              key={cur}
+                              style={[styles.optionBtn, currency === cur && styles.optionActive]} 
+                              onPress={() => setCurrency(cur)}
                             >
-                                <View style={[styles.menuIconBox, { backgroundColor: '#ffedd5' }]}>
-                                    <FontAwesome name="cutlery" size={16} color="#ea580c" />
-                                </View>
-                                <Text style={[styles.menuText, { color: '#ea580c' }]}>Garson Paneli (Restoran)</Text>
-                                <FontAwesome name="chevron-right" size={12} color="#fed7aa" style={styles.chevron} />
-                            </TouchableOpacity>
-
-                            {agencyMenuItems.map((item, index) => (
-                                <TouchableOpacity 
-                                    key={index} 
-                                    style={styles.menuItem} 
-                                    onPress={() => item.route && router.push(item.route as any)}
-                                >
-                                    <View style={styles.menuIconBox}>
-                                        <FontAwesome name={item.icon as any} size={16} color={item.color} />
-                                    </View>
-                                    <Text style={styles.menuText}>{item.title}</Text>
-                                    <FontAwesome name="chevron-right" size={12} color="#cbd5e1" style={styles.chevron} />
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </>
-                )}
-
-                <View style={styles.divider} />
-
-                <View style={[styles.section, { marginBottom: 40 }]}>
-                    <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                        <FontAwesome name="sign-out" size={16} color="#ef4444" style={{ marginRight: 8 }} />
-                        <Text style={styles.logoutText}>Çıkış Yap</Text>
-                    </TouchableOpacity>
+                              <Text style={[styles.optionText, currency === cur && styles.optionTextActive]}>{cur}</Text>
+                            </AnimatedButton>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    </View>
                 </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{userRole === 'agency' ? 'YÖNETİM PANELİ' : 'HESABIM'}</Text>
+                    <View style={styles.cardGroup}>
+                      {userRole === 'customer' ? (
+                        <>
+                          <MenuItem title="Ödeme Yöntemleri" icon="credit-card" color={Colors.light.primary} route="/payment-cards" />
+                          <MenuItem title="Biletlerim & Voucher" icon="ticket" color={Colors.light.primary} route="/tickets" />
+                          <MenuItem title="Hesap Ayarları" icon="cog" color={Colors.light.textMuted} route="/edit-profile" />
+                        </>
+                      ) : (
+                        <>
+                          <MenuItem title="Paneli Görüntüle" icon="dashboard" color={Colors.light.primary} route="/dashboard" />
+                          <MenuItem title="Rezervasyonlar" icon="check-square-o" color={Colors.light.success} route="/bookings" />
+                          <MenuItem title="Turlarımı Yönet" icon="globe" color={Colors.light.primary} route="/my-tours" />
+                        </>
+                      )}
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>DESTEK & YASAL</Text>
+                    <View style={styles.cardGroup}>
+                      <MenuItem title="Yardım Merkezi" icon="question-circle" color={Colors.light.textMuted} />
+                      <MenuItem title="Gizlilik Politikası" icon="shield" color={Colors.light.textMuted} />
+                    </View>
+                </View>
+
+                <View style={styles.logoutWrapper}>
+                  <AnimatedButton style={styles.logoutBtn} onPress={handleLogout} haptic="heavy">
+                      <FontAwesome name="sign-out" size={16} color={Colors.light.error} style={{ marginRight: 12 }} />
+                      <Text style={styles.logoutText}>Oturumu Kapat</Text>
+                  </AnimatedButton>
+                </View>
+
+                <Text style={styles.version}>Tourkia v1.2.0 (Premium Edit)</Text>
 
             </ScrollView>
         </SafeAreaView>
@@ -249,67 +251,65 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+    safeArea: { flex: 1, backgroundColor: Colors.light.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
     container: { flex: 1 },
     
-    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24, backgroundColor: '#fff' },
-    avatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#f1f5f9' },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: 40, paddingBottom: 32 },
+    avatarWrapper: { position: 'relative' },
+    avatar: { width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderColor: '#fff', ...Shadows.sm },
+    activeStatus: { position: 'absolute', bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.light.success, borderWidth: 2, borderColor: '#fff' },
     headerInfo: { flex: 1, marginLeft: 16 },
-    name: { fontSize: 20, fontWeight: '900', color: '#0f172a', marginBottom: 4 },
-    email: { fontSize: 14, color: '#64748b', fontWeight: '500' },
-    editBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f0f9ff', alignItems: 'center', justifyContent: 'center' },
+    name: { fontSize: 22, fontWeight: '900', color: Colors.light.primary, marginBottom: 2 },
+    email: { fontSize: 13, color: Colors.light.textMuted, fontWeight: '600' },
+    editBtn: { width: 44, height: 44, borderRadius: BorderRadius.md, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', ...Shadows.sm },
     
-    loyaltyWrapper: { paddingHorizontal: 24, marginBottom: 24 },
-    loyaltyCard: { borderRadius: 24, padding: 20, shadowColor: '#008cb3', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 8 },
-    loyaltyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    loyaltyBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-    loyaltyBadgeText: { fontSize: 10, fontWeight: '900', color: '#005e85', textTransform: 'uppercase' },
-    pointsText: { fontSize: 14, fontWeight: '900', color: '#fff' },
-    loyaltyTitle: { fontSize: 24, fontWeight: '900', color: '#fff', marginBottom: 4 },
-    loyaltyDesc: { fontSize: 14, color: '#e0f2fe', fontWeight: '600' },
+    section: { paddingHorizontal: Spacing.lg, marginBottom: 24 },
+    sectionTitle: { fontSize: 11, fontWeight: '900', color: Colors.light.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginLeft: 4 },
+    cardGroup: { backgroundColor: '#fff', borderRadius: BorderRadius.xl, overflow: 'hidden', ...Shadows.sm, borderWidth: 1, borderColor: 'rgba(0,0,0,0.02)', marginBottom: 16 },
     
-    section: { paddingHorizontal: 24, marginBottom: 8 },
-    sectionTitle: { fontSize: 12, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+    settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.light.background },
+    settingInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    settingLabel: { fontSize: 13, fontWeight: '700', color: Colors.light.text },
+    optionGroup: { flexDirection: 'row', gap: 8 },
+    optionBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.sm, backgroundColor: Colors.light.background },
+    optionActive: { backgroundColor: Colors.light.secondary },
+    optionText: { fontSize: 12, fontWeight: '800', color: Colors.light.textMuted },
+    optionTextActive: { color: Colors.light.primary },
+
+    menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.light.background },
+    menuIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    menuText: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.light.text },
     
-    menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, marginBottom: 8 },
-    menuIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    menuText: { flex: 1, fontSize: 15, fontWeight: '700', color: '#334155' },
-    chevron: { marginLeft: 'auto' },
-    
-    divider: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 24, marginVertical: 24 },
-    
-    // VIP Card Styles
-    vipContainer: { paddingHorizontal: 24, marginBottom: 32 },
-    vipCard: { height: 200, borderRadius: 20, padding: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
+    vipContainer: { paddingHorizontal: Spacing.lg, marginBottom: 32 },
+    vipCard: { height: 210, borderRadius: BorderRadius.xxl, padding: 24, overflow: 'hidden', ...Shadows.lg },
     shimmerBox: { position: 'absolute', top: 0, left: 0, width: 300, height: '200%', transform: [{ rotate: '45deg' }] },
     shimmerGradient: { width: '100%', height: '100%' },
-    vipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    vipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     vipBrand: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
-    vipChip: { width: 40, height: 30, borderRadius: 6, backgroundColor: 'rgba(251, 191, 36, 0.3)', borderWidth: 1, borderColor: 'rgba(251, 191, 36, 0.5)' },
     vipBody: { flex: 1, justifyContent: 'center' },
-    vipLabel: { color: '#fbbf24', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 1 },
-    vipName: { color: '#fff', fontSize: 22, fontWeight: '900', marginBottom: 4 },
-    vipStatus: { color: '#94a3b8', fontSize: 12, fontWeight: '700' },
+    vipLabel: { color: Colors.light.secondary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 1 },
+    vipName: { color: '#fff', fontSize: 24, fontWeight: '900', marginBottom: 2 },
+    vipStatus: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '700' },
     vipFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-    vipFooterLabel: { color: '#94a3b8', fontSize: 10, fontWeight: '800', marginBottom: 2 },
-    vipFooterValue: { color: '#fff', fontSize: 14, fontWeight: '700', letterSpacing: 1 },
-    vipGoldBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, backgroundColor: '#fbbf24', opacity: 0.8 },
+    vipFooterLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '800', marginBottom: 2 },
+    vipFooterValue: { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 1 },
 
-    logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef2f2', paddingVertical: 16, borderRadius: 16 },
-    logoutText: { fontSize: 15, fontWeight: '800', color: '#ef4444' },
+    logoutWrapper: { paddingHorizontal: Spacing.lg, marginTop: 10 },
+    logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF5F5', paddingVertical: 18, borderRadius: BorderRadius.xl, borderWidth: 1, borderColor: '#FFE5E5' },
+    logoutText: { fontSize: 16, fontWeight: '900', color: Colors.light.error },
+    version: { textAlign: 'center', fontSize: 11, color: Colors.light.textMuted, marginTop: 24, fontWeight: '700', letterSpacing: 0.5 },
 
-    // Guest Styles
-    guestContent: { flexGrow: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center', alignItems: 'center' },
+    guestContent: { flexGrow: 1, backgroundColor: Colors.light.background, padding: 24, justifyContent: 'center', alignItems: 'center' },
     guestHeader: { alignItems: 'center', marginBottom: 40 },
-    guestIconCircle: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#f0f4f8', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-    guestTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a', textAlign: 'center', marginBottom: 12 },
-    guestSubtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
-    guestActions: { width: '100%', gap: 12, marginBottom: 48 },
-    guestLoginBtn: { backgroundColor: '#003580', width: '100%', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#003580', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-    guestLoginBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-    guestRegisterBtn: { backgroundColor: '#fff', width: '100%', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#f1f5f9' },
-    guestRegisterBtnText: { color: '#0f172a', fontSize: 16, fontWeight: '800' },
+    guestIconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: 24, ...Shadows.md },
+    guestTitle: { fontSize: 24, fontWeight: '900', color: Colors.light.primary, textAlign: 'center', marginBottom: 12 },
+    guestSubtitle: { fontSize: 15, color: Colors.light.textMuted, textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
+    guestActions: { width: '100%', gap: 16, marginBottom: 48 },
+    guestLoginBtn: { backgroundColor: Colors.light.primary, width: '100%', height: 60, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', ...Shadows.md },
+    guestLoginBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+    guestRegisterBtn: { backgroundColor: '#fff', width: '100%', height: 60, borderRadius: BorderRadius.lg, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.light.border },
+    guestRegisterBtnText: { color: Colors.light.primary, fontSize: 16, fontWeight: '900' },
     guestInfoCards: { flexDirection: 'row', gap: 12 },
-    infoSmallCard: { flex: 1, backgroundColor: '#f8fafc', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
-    infoCardText: { fontSize: 11, fontWeight: '800', color: '#64748b', marginTop: 8, textTransform: 'uppercase' }
+    infoSmallCard: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: BorderRadius.lg, alignItems: 'center', ...Shadows.sm },
+    infoCardText: { fontSize: 10, fontWeight: '900', color: Colors.light.textMuted, marginTop: 8 }
 });

@@ -56,6 +56,24 @@ export interface Category {
   badge?: string;
 }
 
+export interface Restaurant {
+  id: string;
+  name: string;
+  cuisine: string;
+  distance: number;
+  rating: number;
+  reviewCount: number;
+  address: string;
+  phone: string;
+  lat: number;
+  lng: number;
+  priceLevel: string;
+  openNow: boolean;
+  image: string;
+  specialDish: string;
+  tourkiaDiscount: number;
+}
+
 // Simulated API Data
 const MOCK_TOURS: Tour[] = [
   { id: '1', title: "Kapadokya Balon & Peri Bacaları", duration: "3 Gün, 2 Gece", price: 3000, discountPrice: 2400, currency: 'TRY', rating: "4.9", image: "https://images.unsplash.com/photo-1596395819057-afbf19aff3fb?fit=crop&w=600&q=80", badge: "TÜKENİYOR", fomo: "Şu an 14 kişi inceliyor", loyaltyPoints: 240, slug: 'kapadokya', isPremiumPartner: true, stockCount: 3, totalReviews: 128, agencyName: "Melih Tours", isVerifiedAgency: true, tursabNo: "10245",
@@ -125,6 +143,12 @@ const MOCK_DESTINATIONS: Destination[] = [
   { id: '4', name: "Maldivler", image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?fit=crop&w=300&q=80" },
 ];
 
+const MOCK_RESTAURANTS: Restaurant[] = [
+  { id: '1', name: 'Cappadocia Sofra', cuisine: 'Türk Mutfağı', distance: 0.3, rating: 4.8, reviewCount: 212, address: 'Nevşehir Sok. No:5, Göreme', phone: '+905551112233', lat: 38.6431, lng: 34.8307, priceLevel: '₺₺', openNow: true, image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=220&fit=crop', specialDish: 'Testi Kebabı', tourkiaDiscount: 15 },
+  { id: '2', name: 'Lav Steakhouse', cuisine: 'Izgara & Et', distance: 0.7, rating: 4.6, reviewCount: 178, address: 'Merkez Cad. No:12, Ürgüp', phone: '+905554445566', lat: 38.6325, lng: 34.9147, priceLevel: '₺₺₺', openNow: true, image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=220&fit=crop', specialDish: 'Kuzu Tandır', tourkiaDiscount: 10 },
+  { id: '3', name: 'Panorama Café & Bistro', cuisine: 'Akdeniz & Fusion', distance: 1.2, rating: 4.5, reviewCount: 340, address: 'Balon Sok. No:3, Uçhisar', phone: '+905552223344', lat: 38.6254, lng: 34.8038, priceLevel: '₺₺', openNow: false, image: 'https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=400&h=220&fit=crop', specialDish: 'Zeytinyağlı Tabak', tourkiaDiscount: 20 },
+];
+
 const MOCK_CATEGORIES: Category[] = [
   { id: '1', name: "Kültür Avcısı", example: "Büyük İtalya Turu", price: 18150, image: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=600&auto=format&fit=crop", badge: "ÇOK SATAN" },
   { id: '2', name: "Balayı Turları", example: "Maldivler Rüyası", price: 39500, image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=600&auto=format&fit=crop", badge: "ROMANTİK" },
@@ -140,13 +164,11 @@ export const TourkiaPoints = new PointsEngine();
 
 // Currency_Engine
 export const MOCK_EXCHANGE_RATES: Record<string, number> = { TRY: 1, EUR: 35.5, USD: 33.2, GBP: 41.8 };
-export const USER_PREFERRED_CURRENCY = 'USD'; // Kullanıcının uygulamada seçtiği dil/bölgeye göre simüle edilen para birimi
-
-export const getDisplayPrice = (basePrice: number, baseCurrency: string) => {
-  if (baseCurrency === USER_PREFERRED_CURRENCY) return { amount: basePrice, currency: baseCurrency, isConverted: false };
+export const getDisplayPrice = (basePrice: number, baseCurrency: string, userCurrency: string = 'TRY') => {
+  if (baseCurrency === userCurrency) return { amount: basePrice, currency: baseCurrency, isConverted: false };
   const inTry = basePrice * (MOCK_EXCHANGE_RATES[baseCurrency] || 1);
-  const converted = inTry / (MOCK_EXCHANGE_RATES[USER_PREFERRED_CURRENCY] || 1);
-  return { amount: converted, currency: USER_PREFERRED_CURRENCY, isConverted: true };
+  const converted = inTry / (MOCK_EXCHANGE_RATES[userCurrency] || 1);
+  return { amount: converted, currency: userCurrency, isConverted: true };
 };
 
 export const formatCurrency = (amount: number, currency: string) => {
@@ -214,5 +236,13 @@ export const fetchCategories = async (): Promise<Category[]> => {
     setTimeout(() => {
       resolve(MOCK_CATEGORIES);
     }, 500);
+  });
+};
+
+export const fetchRestaurants = async (): Promise<Restaurant[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(MOCK_RESTAURANTS);
+    }, 450);
   });
 };

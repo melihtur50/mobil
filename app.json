@@ -2,7 +2,8 @@
   "expo": {
     "name": "Tourkia",
     "slug": "tourkia-mobile",
-    "version": "1.0.0",
+    "version": "1.2.0",
+    "owner": "melihtur50",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tourkia",
@@ -10,19 +11,25 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.melihtur.tourkia",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Tourkia, size en yakın anlaşmalı restoranları göstermek için konumunuza ihtiyaç duyar."
+        "NSLocationWhenInUseUsageDescription": "Tourkia, size en yakın anlaşmalı restoranları ve turları göstermek için konumunuza ihtiyaç duyar.",
+        "NSCameraUsageDescription": "Tourkia, QR kod biletlerinizi ve voucherlarınızı okumak için kameranıza ihtiyaç duyar.",
+        "NSPhotoLibraryUsageDescription": "Profil fotoğrafınızı güncellemek için galerinize erişim izni gereklidir."
       }
     },
     "android": {
+      "package": "com.melihtur.tourkia",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#001A33",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "LOCATION",
+        "CAMERA",
+        "NOTIFICATIONS"
+      ]
     },
     "web": {
       "output": "static",
@@ -33,21 +40,19 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Tourkia, size en yakın anlaşmalı restoranları göstermek için konumunuza ihtiyaç duyar."
+          "locationWhenInUsePermission": "Tourkia, size en yakın restoranları göstermek için konumunuza ihtiyaç duyar."
         }
       ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#001A33"
         }
-      ]
+      ],
+      "expo-camera"
     ],
     "experiments": {
       "typedRoutes": true,
