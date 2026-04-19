@@ -12,8 +12,11 @@ interface QuickPreviewModalProps {
   tour: Tour | null;
 }
 
+import { useAppContext } from '../../context/AppContext';
+
 export const QuickPreviewModal: React.FC<QuickPreviewModalProps> = ({ visible, onClose, tour }) => {
   const router = useRouter();
+  const { t } = useAppContext();
   
   if (!tour) return null;
 
@@ -35,7 +38,7 @@ export const QuickPreviewModal: React.FC<QuickPreviewModalProps> = ({ visible, o
             <Image source={{ uri: tour.image }} style={styles.sheetImage} />
             <View style={styles.sheetBody}>
               <Text style={styles.sheetTitle}>{tour.title}</Text>
-              <Text style={styles.sheetSubtitle}>Kapadokya Karma Deneyimi</Text>
+              <Text style={styles.sheetSubtitle}>{t('common.explore_subtitle', { defaultValue: 'Kapadokya Karma Deneyimi' })}</Text>
               
               <View style={styles.featureRow}>
                 <View style={styles.featureItem}>
@@ -43,8 +46,8 @@ export const QuickPreviewModal: React.FC<QuickPreviewModalProps> = ({ visible, o
                     <FontAwesome name="map" size={14} color="#3b82f6" />
                   </View>
                   <View>
-                    <Text style={styles.featureLabel}>Tur Detayı</Text>
-                    <Text style={styles.featureValue}>Profesyonel Rehber + Transfer</Text>
+                    <Text style={styles.featureLabel}>{t('common.tour_detail', { defaultValue: 'Tur Detayı' })}</Text>
+                    <Text style={styles.featureValue}>{t('common.tour_features', { defaultValue: 'Profesyonel Rehber + Transfer' })}</Text>
                   </View>
                 </View>
                 <View style={styles.featureItem}>
@@ -52,15 +55,14 @@ export const QuickPreviewModal: React.FC<QuickPreviewModalProps> = ({ visible, o
                     <FontAwesome name="cutlery" size={14} color="#ea580c" />
                   </View>
                   <View>
-                    <Text style={styles.featureLabel}>Özel Menü</Text>
-                    <Text style={styles.featureValue}>Testi Kebabı + Sınırsız İçecek</Text>
+                    <Text style={styles.featureLabel}>{t('common.special_menu', { defaultValue: 'Özel Menü' })}</Text>
+                    <Text style={styles.featureValue}>{t('common.menu_features', { defaultValue: 'Testi Kebabı + Sınırsız İçecek' })}</Text>
                   </View>
                 </View>
               </View>
 
               <Text style={styles.sheetDescription}>
-                Bu kombo paket ile hem Kapadokya'nın eşsiz vadilerini gezecek hem de 
-                bölgenin en ünlü restoranında Tourkia üyelerine özel fix menünün tadını çıkaracaksınız.
+                {t('common.combo_description', { defaultValue: "Bu kombo paket ile hem Kapadokya'nın eşsiz vadilerini gezecek hem de bölgenin en ünlü restoranında Tourkia üyelerine özel fix menünün tadını çıkaracaksınız." })}
               </Text>
 
               <TouchableOpacity 
@@ -70,7 +72,7 @@ export const QuickPreviewModal: React.FC<QuickPreviewModalProps> = ({ visible, o
                   router.push(`/tour/${tour.id}`);
                 }}
               >
-                <Text style={styles.sheetPrimaryBtnText}>Paketi İncele & Rezerve Et</Text>
+                <Text style={styles.sheetPrimaryBtnText}>{t('button.buy_now')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

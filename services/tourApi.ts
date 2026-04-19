@@ -163,7 +163,15 @@ class PointsEngine {
 export const TourkiaPoints = new PointsEngine();
 
 // Currency_Engine
-export const MOCK_EXCHANGE_RATES: Record<string, number> = { TRY: 1, EUR: 35.5, USD: 33.2, GBP: 41.8 };
+export const MOCK_EXCHANGE_RATES: Record<string, number> = { 
+  TRY: 1, 
+  EUR: 35.5, 
+  USD: 33.2, 
+  GBP: 41.8,
+  CNY: 4.5,
+  RUB: 0.36
+};
+
 export const getDisplayPrice = (basePrice: number, baseCurrency: string, userCurrency: string = 'TRY') => {
   if (baseCurrency === userCurrency) return { amount: basePrice, currency: baseCurrency, isConverted: false };
   const inTry = basePrice * (MOCK_EXCHANGE_RATES[baseCurrency] || 1);
@@ -171,8 +179,27 @@ export const getDisplayPrice = (basePrice: number, baseCurrency: string, userCur
   return { amount: converted, currency: userCurrency, isConverted: true };
 };
 
-export const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(amount);
+export const formatCurrency = (amount: number, currency: string, locale: string = 'en-US') => {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(amount);
+};
+
+export const formatPriceWithContext = (amount: number, currency: string, userLanguage: string) => {
+  const mainPrice = formatCurrency(amount, currency, userLanguage === 'tr' ? 'tr-TR' : 'en-US');
+  
+  // Calculate TRY equivalent if not already in TRY for estimates
+  const amountInTry = amount * (MOCK_EXCHANGE_RATES[currency] || 1);
+
+  if (userLanguage === 'zh') {
+    const amountInCny = amountInTry / MOCK_EXCHANGE_RATES.CNY;
+    return `${mainPrice} / ~¥${Math.round(amountInCny)}`;
+  }
+  
+  if (userLanguage === 'ru') {
+    const amountInUsd = amountInTry / MOCK_EXCHANGE_RATES.USD;
+    return `${mainPrice} ($${Math.round(amountInUsd)})`;
+  }
+
+  return mainPrice;
 };
 
 // Minimal Pub/Sub for Live_Pulse_Sync

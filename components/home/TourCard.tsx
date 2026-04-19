@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, Animated } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { Tour, getDisplayPrice, formatCurrency } from '../../services/tourApi';
+import { Tour, getDisplayPrice, formatCurrency, formatPriceWithContext } from '../../services/tourApi';
 import { useRouter } from 'expo-router';
 import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
 import { AnimatedButton } from '../common/AnimatedButton';
@@ -15,7 +15,7 @@ interface TourCardProps {
 
 export const TourCard: React.FC<TourCardProps> = ({ tour, index = 0, style }) => {
   const router = useRouter();
-  const { currency } = useAppContext();
+  const { currency, language } = useAppContext();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
   
   // Entrance Animation
@@ -82,7 +82,16 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, index = 0, style }) =>
             )}
           </View>
 
-          <Text style={styles.title} numberOfLines={1}>{tour.title}</Text>
+          <Text 
+            style={[
+              styles.title, 
+              language === 'zh' && { fontSize: 18 }
+            ]} 
+            numberOfLines={2}
+            adjustsFontSizeToFit={language === 'ru'}
+          >
+            {tour.title}
+          </Text>
           
           {tour.isVerifiedAgency && (
             <View style={styles.agencyBadge}>
@@ -95,11 +104,23 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, index = 0, style }) =>
             <View style={styles.priceContainer}>
               {discountDisplayPrice ? (
                 <>
-                  <Text style={styles.oldPrice}>{formatCurrency(displayPrice.amount, displayPrice.currency)}</Text>
-                  <Text style={styles.price}>{formatCurrency(discountDisplayPrice.amount, discountDisplayPrice.currency)}</Text>
+                  <Text style={styles.oldPrice} numberOfLines={1} adjustsFontSizeToFit>{formatPriceWithContext(displayPrice.amount, displayPrice.currency, language)}</Text>
+                  <Text 
+                    style={[styles.price, language === 'zh' && { fontSize: 20 }]} 
+                    numberOfLines={1} 
+                    adjustsFontSizeToFit
+                  >
+                    {formatPriceWithContext(discountDisplayPrice.amount, discountDisplayPrice.currency, language)}
+                  </Text>
                 </>
               ) : (
-                <Text style={styles.price}>{formatCurrency(displayPrice.amount, displayPrice.currency)}</Text>
+                <Text 
+                  style={[styles.price, language === 'zh' && { fontSize: 20 }]} 
+                  numberOfLines={1} 
+                  adjustsFontSizeToFit
+                >
+                  {formatPriceWithContext(displayPrice.amount, displayPrice.currency, language)}
+                </Text>
               )}
             </View>
             
@@ -168,7 +189,7 @@ const styles = StyleSheet.create({
   agencyText: { color: Colors.light.textMuted, fontSize: 11, fontWeight: '600' },
   
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 },
-  priceContainer: {},
+  priceContainer: { flex: 1, marginRight: 8, flexWrap: 'wrap' },
   oldPrice: { fontSize: 11, color: Colors.light.textMuted, textDecorationLine: 'line-through', marginBottom: 0 },
   price: { fontSize: 18, fontWeight: '900', color: Colors.light.primary },
   goButton: { width: 32, height: 32, backgroundColor: Colors.light.primary, borderRadius: BorderRadius.md, justifyContent: 'center', alignItems: 'center' },

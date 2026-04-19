@@ -14,6 +14,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { AppProvider } from '@/context/AppContext';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notificationService';
+import '@/services/i18n';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

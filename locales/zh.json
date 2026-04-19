@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "欢迎",
+    "search_placeholder": "你想去哪里？",
+    "popular_routes": "热门路线",
+    "tours": "旅游",
+    "explore": "探索",
+    "tickets": "门票",
+    "profile": "个人资料",
+    "home": "首页",
+    "lezzet": "美食",
+    "combo_deals": "传奇组合",
+    "combo_subtitle": "花更少，玩更多！",
+    "recommended_tours": "为您推荐",
+    "all_rights": "版权所有",
+    "settings": "设置",
+    "logout": "登出",
+    "language": "语言",
+    "currency": "货币",
+    "adults": "成人",
+    "children": "儿童",
+    "discover_tours": "发现之旅",
+    "buy_now": "现在购买",
+    "add_to_cart": "加入购物车",
+    "search": "搜索"
+  },
+  "button": {
+    "buy_now": "现在购买",
+    "add_to_cart": "加入购物车"
+  }
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
-import { Tour, getDisplayPrice, formatCurrency } from '../../services/tourApi';
+import { Tour, getDisplayPrice, formatPriceWithContext } from '../../services/tourApi';
 import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
 import { AnimatedButton } from '../common/AnimatedButton';
 import { useAppContext } from '../../context/AppContext';
@@ -13,7 +13,7 @@ interface ComboCarouselProps {
 }
 
 export const ComboCarousel: React.FC<ComboCarouselProps> = ({ tours, onComboSelect }) => {
-  const { currency, t } = useAppContext();
+  const { currency, language, t } = useAppContext();
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -58,7 +58,7 @@ export const ComboCarousel: React.FC<ComboCarouselProps> = ({ tours, onComboSele
                 <Image source={{ uri: tour.image }} style={styles.image} />
                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.9)']} style={styles.overlay}>
                    <View style={styles.priceTag}>
-                     <Text style={styles.priceText}>{formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency)}</Text>
+                     <Text style={styles.priceText}>{formatPriceWithContext(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency, language)}</Text>
                    </View>
                    <Text style={styles.title} numberOfLines={1}>{tour.title}</Text>
                    <View style={styles.includedRow}>

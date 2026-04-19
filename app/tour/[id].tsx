@@ -2,8 +2,9 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Animated, Dimensions, ImageBackground, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Modal, Image, Linking } from 'react-native';
-import { fetchTours, Tour, getDisplayPrice, formatCurrency } from '../../services/tourApi';
+import { fetchTours, Tour, getDisplayPrice, formatPriceWithContext } from '../../services/tourApi';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar';
+import { useAppContext } from '../../context/AppContext';
 
 const { width, height } = Dimensions.get('window');
 const HEADER_HEIGHT = 350;
@@ -11,6 +12,7 @@ const HEADER_HEIGHT = 350;
 export default function TourDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { currency, language } = useAppContext();
     const scrollY = new Animated.Value(0);
     const [tour, setTour] = useState<Tour | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -316,10 +318,7 @@ export default function TourDetailScreen() {
             <View style={styles.bottomBar}>
                 <View style={styles.priceContainer}>
                     <Text style={styles.priceLabel}>Kişi başı</Text>
-                    <Text style={styles.priceAmount}>{formatCurrency(getDisplayPrice(tour.price, tour.currency || 'TRY').amount, getDisplayPrice(tour.price, tour.currency || 'TRY').currency)}</Text>
-                    {getDisplayPrice(tour.price, tour.currency || 'TRY').isConverted && (
-                        <Text style={{ fontSize: 10, color: '#febb02', fontWeight: '800' }}>*Tahmini Kur Karşılığı</Text>
-                    )}
+                    <Text style={styles.priceAmount}>{formatPriceWithContext(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency, language)}</Text>
                 </View>
                 <TouchableOpacity 
                     style={[
@@ -330,7 +329,11 @@ export default function TourDetailScreen() {
                     disabled={!selectedDate || !!(selectedDate && tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0)}
                     onPress={() => router.push(`/checkout/upsell?id=${tour.id}&date=${selectedDate}`)}
                 >
-                    <Text style={styles.buyBtnText}>
+                    <Text 
+                        style={[styles.buyBtnText, language === 'zh' && { fontSize: 20 }]} 
+                        numberOfLines={1} 
+                        adjustsFontSizeToFit
+                    >
                         {!selectedDate ? 'Tarih Seçiniz' : (tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 ? 'Kontenjan Dolu - Başka Tarih Seç' : 'Rezervasyon Yap')}
                     </Text>
                 </TouchableOpacity>

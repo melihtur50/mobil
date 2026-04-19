@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "Hoş Geldiniz",
+    "search_placeholder": "Nereye gitmek istersiniz?",
+    "popular_routes": "POPÜLER ROTALAR",
+    "tours": "TURLAR",
+    "explore": "Keşfet",
+    "tickets": "Biletler",
+    "profile": "Profil",
+    "home": "Ana Sayfa",
+    "lezzet": "Lezzet",
+    "combo_deals": "Efsane Kombolar",
+    "combo_subtitle": "Daha az öde, daha çok gez!",
+    "recommended_tours": "Sizin için önerilen turlar",
+    "all_rights": "Tüm hakları saklıdır",
+    "settings": "Ayarlar",
+    "logout": "Oturumu Kapat",
+    "language": "Dil",
+    "currency": "Para Birimi",
+    "adults": "Yetişkin",
+    "children": "Çocuk",
+    "discover_tours": "Turları Keşfet",
+    "buy_now": "Satın Al",
+    "add_to_cart": "Sepete Ekle",
+    "search": "Ara"
+  },
+  "button": {
+    "buy_now": "Satın Al",
+    "add_to_cart": "Sepete Ekle"
+  }
+}

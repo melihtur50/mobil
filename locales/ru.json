@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "Добро пожаловать",
+    "search_placeholder": "Куда вы хотите поехать?",
+    "popular_routes": "ПОПУЛЯРНЫЕ МАРШРУТЫ",
+    "tours": "ТУРЫ",
+    "explore": "Исследовать",
+    "tickets": "Билеты",
+    "profile": "Профиль",
+    "home": "Главная",
+    "lezzet": "Вкус",
+    "combo_deals": "Легендарные комбо",
+    "combo_subtitle": "Платите меньше, путешествуйте больше!",
+    "recommended_tours": "Рекомендуемо для вас",
+    "all_rights": "Все права защищены",
+    "settings": "Настройки",
+    "logout": "Выход",
+    "language": "Язык",
+    "currency": "Валюта",
+    "adults": "Взрослый",
+    "children": "Ребенок",
+    "discover_tours": "Открыть туры",
+    "buy_now": "Купить сейчас",
+    "add_to_cart": "Добавить в корзину",
+    "search": "Поиск"
+  },
+  "button": {
+    "buy_now": "Купить сейчас",
+    "add_to_cart": "Добавить в корзину"
+  }
+}

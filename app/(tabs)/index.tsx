@@ -125,7 +125,13 @@ export default function HomeScreen() {
           <>
             {/* 1. Turlar (Horizontal) */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{language === 'tr' ? 'Popüler Turlar' : 'Popular Tours'}</Text>
+              <Text 
+                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
+                numberOfLines={1} 
+                adjustsFontSizeToFit
+              >
+                {t('common.popular_routes')}
+              </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
               {tours.map((tour, index) => (
@@ -135,7 +141,13 @@ export default function HomeScreen() {
 
             {/* 2. Lezzetler (Horizontal) */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{language === 'tr' ? 'Lezzet Durakları' : 'Gourmet Spots'}</Text>
+              <Text 
+                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
+                numberOfLines={1} 
+                adjustsFontSizeToFit
+              >
+                {t('common.lezzet')}
+              </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
               {restaurants.map((rest) => (
@@ -148,7 +160,13 @@ export default function HomeScreen() {
 
             {/* Rest of the UI (Vertical) */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{language === 'tr' ? 'Trend Kategoriler' : 'Trending Categories'}</Text>
+              <Text 
+                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
+                numberOfLines={1} 
+                adjustsFontSizeToFit
+              >
+                {t('common.trending_categories', { defaultValue: 'Trend Kategoriler' })}
+              </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
               {categories.map((cat) => (
@@ -159,7 +177,13 @@ export default function HomeScreen() {
             </ScrollView>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('recommended_tours')}</Text>
+              <Text 
+                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
+                numberOfLines={1} 
+                adjustsFontSizeToFit
+              >
+                {t('common.recommended_tours')}
+              </Text>
             </View>
             <View style={styles.verticalList}>
                {tours.slice(1).map(tour => (

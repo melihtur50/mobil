@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "search_placeholder": "Where do you want to go?",
+    "popular_routes": "POPULAR ROUTES",
+    "tours": "TOURS",
+    "explore": "Explore",
+    "tickets": "Tickets",
+    "profile": "Profile",
+    "home": "Home",
+    "lezzet": "Taste",
+    "combo_deals": "Legendary Combos",
+    "combo_subtitle": "Pay less, travel more!",
+    "recommended_tours": "Recommended for you",
+    "all_rights": "All rights reserved",
+    "settings": "Settings",
+    "logout": "Logout",
+    "language": "Language",
+    "currency": "Currency",
+    "adults": "Adult",
+    "children": "Child",
+    "discover_tours": "Discover Tours",
+    "buy_now": "Buy Now",
+    "add_to_cart": "Add to Cart",
+    "search": "Search"
+  },
+  "button": {
+    "buy_now": "Buy Now",
+    "add_to_cart": "Add to Cart"
+  }
+}
