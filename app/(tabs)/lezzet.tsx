@@ -80,7 +80,7 @@ function MapCard({
           <Text style={mapStyles.pinBadgeText}>5KM Çapında {restaurants.length} Partner</Text>
         </View>
         <View style={mapStyles.openMapBtn}>
-          <Text style={mapStyles.openMapBtnText}>📍 Google Maps'te Detaylı Gör</Text>
+          <Text style={mapStyles.openMapBtnText}>{`📍 Google Maps'te Detaylı Gör`}</Text>
         </View>
       </TouchableOpacity>
 
@@ -109,8 +109,11 @@ function MapCard({
   );
 }
 
+import { useRouter } from 'expo-router';
+
 // ─── Restoran Kartı ───
 function RestaurantCard({ item }: { item: any }) {
+  const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -121,53 +124,55 @@ function RestaurantCard({ item }: { item: any }) {
     ]).start();
   }, []);
 
-  const openInMaps = () => {
-    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`);
+  const openDetail = () => {
+    router.push(`/restaurant/${item.id}`);
   };
 
   return (
-    <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: item.image }} style={styles.restaurantImage} resizeMode="cover" />
-        <LinearGradient
-          colors={['#f97316', '#ea580c']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.specialMenuBadge}>
-          <FontAwesome name="cutlery" size={10} color="#fff" style={{ marginRight: 5 }} />
-          <Text style={styles.specialMenuText}>Tourkia Özel Menü</Text>
-        </LinearGradient>
-        <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>%{item.tourkiaDiscount}</Text>
-          <Text style={styles.discountLabel}>İndirim</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardContent}>
-        <View style={styles.cardRow}>
-          <Text style={styles.restaurantName} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.ratingContainer}>
-            <FontAwesome name="star" size={13} color="#f59e0b" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
+    <TouchableOpacity activeOpacity={0.9} onPress={openDetail}>
+      <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: item.image }} style={styles.restaurantImage} resizeMode="cover" />
+          <LinearGradient
+            colors={['#f97316', '#ea580c']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.specialMenuBadge}>
+            <FontAwesome name="cutlery" size={10} color="#fff" style={{ marginRight: 5 }} />
+            <Text style={styles.specialMenuText}>Tourkia Özel Menü</Text>
+          </LinearGradient>
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountText}>%{item.tourkiaDiscount}</Text>
+            <Text style={styles.discountLabel}>İndirim</Text>
           </View>
         </View>
 
-        <View style={styles.cardRow}>
-          <View style={styles.cuisineTag}>
-            <Text style={styles.cuisineText}>{item.cuisine}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.cardRow}>
+            <Text style={styles.restaurantName} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.ratingContainer}>
+              <FontAwesome name="star" size={13} color="#f59e0b" />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+            </View>
           </View>
-          <View style={styles.distancePill}>
-            <FontAwesome name="map-marker" size={12} color="#008cb3" />
-            <Text style={styles.distanceText}> {item.distance} km</Text>
+
+          <View style={styles.cardRow}>
+            <View style={styles.cuisineTag}>
+              <Text style={styles.cuisineText}>{item.cuisine}</Text>
+            </View>
+            <View style={styles.distancePill}>
+              <FontAwesome name="map-marker" size={12} color="#008cb3" />
+              <Text style={styles.distanceText}> {item.distance} km</Text>
+            </View>
+          </View>
+
+          <View style={styles.mapBtn}>
+            <FontAwesome name="info-circle" size={14} color="#008cb3" />
+            <Text style={styles.mapBtnText}>Restoran Detaylarını Gör</Text>
           </View>
         </View>
-
-        <TouchableOpacity style={styles.mapBtn} onPress={openInMaps}>
-          <FontAwesome name="map" size={14} color="#008cb3" />
-          <Text style={styles.mapBtnText}>Haritada Gör & Yol Tarifi</Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 

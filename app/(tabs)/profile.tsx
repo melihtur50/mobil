@@ -7,14 +7,24 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
 import { AnimatedButton } from '../../components/common/AnimatedButton';
+import { ReferralService } from '../../services/referralService';
+import { Modal, TouchableOpacity, TextInput } from 'react-native';
 
 export default function ProfileScreen() {
     const router = useRouter();
     const { logout, userRole, isGuest } = useAuth();
-    const { language, setLanguage, currency, setCurrency, t } = useAppContext();
+    const { language, setLanguage, currency, setCurrency, points, userPromoCode, t } = useAppContext();
     const shimmerAnim = React.useRef(new Animated.Value(0)).current;
+    const [referralModalVisible, setReferralModalVisible] = useState(false);
+    const [promoCode, setPromoCode] = useState(userPromoCode || '');
 
     React.useEffect(() => {
+        const initReferral = async () => {
+            const code = await ReferralService.getOrCreatePromoCode('ALEX');
+            setPromoCode(code);
+        };
+        initReferral();
+
         if (!isGuest) {
             Animated.loop(
                 Animated.timing(shimmerAnim, {
@@ -163,6 +173,34 @@ export default function ProfileScreen() {
                     </AnimatedButton>
                 )}
 
+                {/* Komut 25: Referral-Gamification-Loop */}
+                {!isGuest && (
+                    <View style={styles.section}>
+                        <AnimatedButton 
+                            style={styles.referralCard} 
+                            onPress={() => setReferralModalVisible(true)}
+                            haptic="medium"
+                        >
+                            <LinearGradient
+                                colors={['#8b5cf6', '#6366f1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.referralGradient}
+                            >
+                                <View style={styles.referralInfo}>
+                                    <View style={styles.pointsBadge}>
+                                        <FontAwesome name="gift" size={16} color="#fff" />
+                                        <Text style={styles.pointsText}>{points} EUR Puan</Text>
+                                    </View>
+                                    <Text style={styles.referralTitle}>Arkadaşını Davet Et</Text>
+                                    <Text style={styles.referralSubtitle}>Her başarılı davette 10 EUR kazan!</Text>
+                                </View>
+                                <FontAwesome name="share-alt" size={24} color="rgba(255,255,255,0.8)" />
+                            </LinearGradient>
+                        </AnimatedButton>
+                    </View>
+                )}
+
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>UYGULAMA AYARLARI</Text>
                     <View style={styles.cardGroup}>
@@ -216,13 +254,20 @@ export default function ProfileScreen() {
                         <>
                           <MenuItem title="Ödeme Yöntemleri" icon="credit-card" color={Colors.light.primary} route="/payment-cards" />
                           <MenuItem title="Biletlerim & Voucher" icon="ticket" color={Colors.light.primary} route="/tickets" />
+                          <MenuItem title="Hediye Kahveni Al ☕" icon="coffee" color="#f97316" route="/coffee-reward" />
                           <MenuItem title="Hesap Ayarları" icon="cog" color={Colors.light.textMuted} route="/edit-profile" />
                         </>
-                      ) : (
+                      ) : userRole === 'agency' ? (
                         <>
                           <MenuItem title="Paneli Görüntüle" icon="dashboard" color={Colors.light.primary} route="/dashboard" />
                           <MenuItem title="Rezervasyonlar" icon="check-square-o" color={Colors.light.success} route="/bookings" />
                           <MenuItem title="Turlarımı Yönet" icon="globe" color={Colors.light.primary} route="/my-tours" />
+                        </>
+                      ) : (
+                        <>
+                          <MenuItem title="God-Mode Dashboard" icon="bolt" color="#6366f1" route="/admin-dashboard" />
+                          <MenuItem title="Global Finans Takibi" icon="bank" color="#f59e0b" route="/admin-dashboard" />
+                          <MenuItem title="Tüm İşletmeler" icon="users" color="#10b981" />
                         </>
                       )}
                     </View>
@@ -246,6 +291,58 @@ export default function ProfileScreen() {
                 <Text style={styles.version}>Tourkia v1.2.0 (Premium Edit)</Text>
 
             </ScrollView>
+
+            <Modal
+                visible={referralModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setReferralModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Davet Et & Kazan</Text>
+                            <TouchableOpacity onPress={() => setReferralModalVisible(false)}>
+                                <FontAwesome name="close" size={24} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.modalBody}>
+                            <View style={styles.promoCodeBox}>
+                                <Text style={styles.promoLabel}>SENİN PROMO KODUN</Text>
+                                <View style={styles.codeRow}>
+                                    <Text style={styles.codeText}>{promoCode}</Text>
+                                    <TouchableOpacity onPress={() => ReferralService.shareInvite(promoCode)}>
+                                        <FontAwesome name="copy" size={20} color="#6366f1" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            <Text style={styles.referralStepsTitle}>Nasıl Çalışır?</Text>
+                            <View style={styles.stepItem}>
+                                <View style={styles.stepDot}><Text style={styles.stepNum}>1</Text></View>
+                                <Text style={styles.stepText}>Linkini WhatsApp veya Telegram'dan arkadaşına gönder.</Text>
+                            </View>
+                            <View style={styles.stepItem}>
+                                <View style={styles.stepDot}><Text style={styles.stepNum}>2</Text></View>
+                                <Text style={styles.stepText}>Arkadaşın ilk rezervasyonunda <Text style={{fontWeight:'800'}}>%5 İndirim</Text> kazansın.</Text>
+                            </View>
+                            <View style={styles.stepItem}>
+                                <View style={styles.stepDot}><Text style={styles.stepNum}>3</Text></View>
+                                <Text style={styles.stepText}>Rezervasyon tamamlandığında cüzdanına <Text style={{fontWeight:'800'}}>10 EUR</Text> yüklensin!</Text>
+                            </View>
+
+                            <TouchableOpacity 
+                                style={styles.shareButton}
+                                onPress={() => ReferralService.shareInvite(promoCode)}
+                            >
+                                <FontAwesome name="whatsapp" size={20} color="#fff" style={{marginRight: 10}} />
+                                <Text style={styles.shareButtonText}>Arkadaşlarınla Paylaş</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -298,6 +395,33 @@ const styles = StyleSheet.create({
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF5F5', paddingVertical: 18, borderRadius: BorderRadius.xl, borderWidth: 1, borderColor: '#FFE5E5' },
     logoutText: { fontSize: 16, fontWeight: '900', color: Colors.light.error },
     version: { textAlign: 'center', fontSize: 11, color: Colors.light.textMuted, marginTop: 24, fontWeight: '700', letterSpacing: 0.5 },
+
+    referralCard: { borderRadius: BorderRadius.xl, overflow: 'hidden', ...Shadows.md },
+    referralGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
+    referralInfo: { flex: 1 },
+    pointsBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginBottom: 8 },
+    pointsText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    referralTitle: { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 2 },
+    referralSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600' },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    modalTitle: { fontSize: 20, fontWeight: '900', color: Colors.light.primary },
+    modalBody: {},
+    promoCodeBox: { backgroundColor: '#f8fafc', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 32 },
+    promoLabel: { fontSize: 10, fontWeight: '900', color: '#64748b', letterSpacing: 1, marginBottom: 8, textAlign: 'center' },
+    codeRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16 },
+    codeText: { fontSize: 32, fontWeight: '900', color: '#6366f1', letterSpacing: 2 },
+
+    referralStepsTitle: { fontSize: 16, fontWeight: '800', color: Colors.light.primary, marginBottom: 16 },
+    stepItem: { flexDirection: 'row', gap: 12, marginBottom: 16, alignItems: 'center' },
+    stepDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+    stepNum: { fontSize: 12, fontWeight: '900', color: '#6366f1' },
+    stepText: { fontSize: 14, color: '#475569', fontWeight: '500', flex: 1 },
+
+    shareButton: { backgroundColor: '#25D366', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, borderRadius: 16, marginTop: 16 },
+    shareButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
     guestContent: { flexGrow: 1, backgroundColor: Colors.light.background, padding: 24, justifyContent: 'center', alignItems: 'center' },
     guestHeader: { alignItems: 'center', marginBottom: 40 },

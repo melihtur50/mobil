@@ -14,6 +14,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import { AppProvider } from '@/context/AppContext';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notificationService';
+import { initLocationGeofence } from '@/services/locationGeofenceService';
+import { SimulationService } from '@/services/simulationService';
 import '@/services/i18n';
 
 export default function RootLayout() {
@@ -22,8 +24,18 @@ export default function RootLayout() {
 
   useEffect(() => {
     registerForPushNotificationsAsync();
-    const cleanup = setupNotificationListeners();
-    return cleanup;
+    const cleanupNotifications = setupNotificationListeners();
+    
+    // Initialize Geofencing (Border Spy)
+    initLocationGeofence();
+
+    // Komut 22: Financial-Simulation-Environment (Test ve Simülasyon Zırhı)
+    const cleanupSim = SimulationService.startAutoSimulation();
+    
+    return () => {
+        cleanupNotifications();
+        cleanupSim();
+    };
   }, []);
 
   return (
@@ -36,6 +48,8 @@ export default function RootLayout() {
               <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="register" options={{ headerShown: false }} />
               <Stack.Screen name="agency-auth" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="admin-dashboard" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="coffee-reward" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
           </View>

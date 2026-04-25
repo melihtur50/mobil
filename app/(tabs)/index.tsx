@@ -13,6 +13,7 @@ import { ComboCarousel } from '../../components/home/ComboCarousel';
 import { TourCard } from '../../components/home/TourCard';
 import { RestaurantCardHome } from '../../components/home/RestaurantCardHome';
 import { QuickPreviewModal } from '../../components/home/QuickPreviewModal';
+import { SectionHeader } from '../../components/home/SectionHeader';
 import { useAppContext } from '../../context/AppContext';
 
 export default function HomeScreen() {
@@ -94,7 +95,7 @@ export default function HomeScreen() {
           searchDate={searchDate}
           setDatePickerVisible={setDatePickerVisible}
           adults={adults}
-          children={children}
+          childCount={children}
           setGuestPickerVisible={setGuestPickerVisible}
         />
 
@@ -124,15 +125,7 @@ export default function HomeScreen() {
         ) : (
           <>
             {/* 1. Turlar (Horizontal) */}
-            <View style={styles.sectionHeader}>
-              <Text 
-                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
-                numberOfLines={1} 
-                adjustsFontSizeToFit
-              >
-                {t('common.popular_routes')}
-              </Text>
-            </View>
+            <SectionHeader title={t('common.popular_routes')} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
               {tours.map((tour, index) => (
                 <TourCard key={tour.id} tour={tour} index={index} />
@@ -140,15 +133,7 @@ export default function HomeScreen() {
             </ScrollView>
 
             {/* 2. Lezzetler (Horizontal) */}
-            <View style={styles.sectionHeader}>
-              <Text 
-                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
-                numberOfLines={1} 
-                adjustsFontSizeToFit
-              >
-                {t('common.lezzet')}
-              </Text>
-            </View>
+            <SectionHeader title={t('common.lezzet')} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
               {restaurants.map((rest) => (
                 <RestaurantCardHome key={rest.id} restaurant={rest} />
@@ -156,18 +141,10 @@ export default function HomeScreen() {
             </ScrollView>
 
             {/* 3. Tur + Lezzet (Horizontal) */}
-            <ComboCarousel tours={tours} onComboSelect={handleComboSelect} />
+            <ComboCarousel tours={tours} onComboSelect={handleComboSelect} loading={loading} />
 
             {/* Rest of the UI (Vertical) */}
-            <View style={styles.sectionHeader}>
-              <Text 
-                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
-                numberOfLines={1} 
-                adjustsFontSizeToFit
-              >
-                {t('common.trending_categories', { defaultValue: 'Trend Kategoriler' })}
-              </Text>
-            </View>
+            <SectionHeader title={t('common.trending_categories', { defaultValue: 'Trend Kategoriler' })} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
               {categories.map((cat) => (
                 <TouchableOpacity key={cat.id} style={styles.bookingCatPill}>
@@ -176,15 +153,7 @@ export default function HomeScreen() {
               ))}
             </ScrollView>
 
-            <View style={styles.sectionHeader}>
-              <Text 
-                style={[styles.sectionTitle, language === 'zh' && { fontSize: 24 }]} 
-                numberOfLines={1} 
-                adjustsFontSizeToFit
-              >
-                {t('common.recommended_tours')}
-              </Text>
-            </View>
+            <SectionHeader title={t('common.recommended_tours')} />
             <View style={styles.verticalList}>
                {tours.slice(1).map(tour => (
                  <TourCard key={'v-'+tour.id} tour={tour} style={{ width: '100%', marginRight: 0, marginBottom: Spacing.md }} />

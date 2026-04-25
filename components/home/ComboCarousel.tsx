@@ -10,10 +10,82 @@ import { useAppContext } from '../../context/AppContext';
 interface ComboCarouselProps {
   tours: Tour[];
   onComboSelect: (tour: Tour) => void;
+  loading?: boolean;
 }
 
-export const ComboCarousel: React.FC<ComboCarouselProps> = ({ tours, onComboSelect }) => {
+const ComboCard = ({ tour, index, onComboSelect, currency, language }: any) => {
+    const fadeAnim = React.useRef(new Animated.Value(0)).current;
+    const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+
+    React.useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                delay: index * 150,
+                useNativeDriver: true,
+            }),
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 6,
+                tension: 40,
+                delay: index * 150,
+                useNativeDriver: true,
+            })
+        ]).start();
+    }, [index]);
+
+    return (
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+            <AnimatedButton 
+                style={styles.card}
+                onPress={() => onComboSelect(tour)}
+                haptic="heavy"
+            >
+                <Image source={{ uri: tour.image }} style={styles.image} />
+                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.9)']} style={styles.overlay}>
+                    <View style={styles.priceTag}>
+                        <Text style={styles.priceText}>{formatPriceWithContext(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency, language)}</Text>
+                    </View>
+                    <Text style={styles.title} numberOfLines={1}>{tour.title}</Text>
+                    <View style={styles.includedRow}>
+                        <View style={styles.pill}>
+                            <FontAwesome name="map-marker" size={10} color="#fff" />
+                            <Text style={styles.pillText}>TUR</Text>
+                        </View>
+                        <Text style={styles.plus}>+</Text>
+                        <View style={[styles.pill, { backgroundColor: Colors.light.secondary }]}>
+                            <FontAwesome name="cutlery" size={10} color={Colors.light.primary} />
+                            <Text style={[styles.pillText, { color: Colors.light.primary }]}>YEMEK</Text>
+                        </View>
+                    </View>
+                </LinearGradient>
+                <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>%15 İNDİRİM</Text>
+                </View>
+            </AnimatedButton>
+        </Animated.View>
+    );
+};
+
+export const ComboCarousel: React.FC<ComboCarouselProps> = ({ tours, onComboSelect, loading }) => {
   const { currency, language, t } = useAppContext();
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.sectionHeader}>
+          <View style={{ width: 150, height: 20, backgroundColor: '#eee', borderRadius: 4 }} />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {[1, 2].map(i => (
+             <View key={'combo-s-'+i} style={[styles.card, { backgroundColor: '#f5f5f5' }]} />
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -26,60 +98,16 @@ export const ComboCarousel: React.FC<ComboCarouselProps> = ({ tours, onComboSele
         </TouchableOpacity>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {tours.filter(t => t.price > 1000).slice(0, 4).map((tour, index) => {
-          const fadeAnim = React.useRef(new Animated.Value(0)).current;
-          const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
-
-          React.useEffect(() => {
-            Animated.parallel([
-              Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 600,
-                delay: index * 150,
-                useNativeDriver: true,
-              }),
-              Animated.spring(scaleAnim, {
-                toValue: 1,
-                friction: 6,
-                tension: 40,
-                delay: index * 150,
-                useNativeDriver: true,
-              })
-            ]).start();
-          }, []);
-
-          return (
-            <Animated.View key={'combo-'+tour.id} style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-              <AnimatedButton 
-                style={styles.card}
-                onPress={() => onComboSelect(tour)}
-                haptic="heavy"
-              >
-                <Image source={{ uri: tour.image }} style={styles.image} />
-                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.9)']} style={styles.overlay}>
-                   <View style={styles.priceTag}>
-                     <Text style={styles.priceText}>{formatPriceWithContext(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency, language)}</Text>
-                   </View>
-                   <Text style={styles.title} numberOfLines={1}>{tour.title}</Text>
-                   <View style={styles.includedRow}>
-                      <View style={styles.pill}>
-                        <FontAwesome name="map-marker" size={10} color="#fff" />
-                        <Text style={styles.pillText}>TUR</Text>
-                      </View>
-                      <Text style={styles.plus}>+</Text>
-                      <View style={[styles.pill, { backgroundColor: Colors.light.secondary }]}>
-                        <FontAwesome name="cutlery" size={10} color={Colors.light.primary} />
-                        <Text style={[styles.pillText, { color: Colors.light.primary }]}>YEMEK</Text>
-                      </View>
-                   </View>
-                </LinearGradient>
-                <View style={styles.discountBadge}>
-                  <Text style={styles.discountText}>%15 İNDİRİM</Text>
-                </View>
-              </AnimatedButton>
-            </Animated.View>
-          );
-        })}
+        {tours.filter(tour => tour.price > 1000).slice(0, 4).map((tour, index) => (
+            <ComboCard 
+                key={'combo-'+tour.id} 
+                tour={tour} 
+                index={index} 
+                onComboSelect={onComboSelect}
+                currency={currency}
+                language={language}
+            />
+        ))}
       </ScrollView>
     </View>
   );

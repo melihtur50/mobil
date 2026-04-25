@@ -17,7 +17,7 @@ interface SearchFormProps {
   searchDate: Date;
   setDatePickerVisible: (visible: boolean) => void;
   adults: number;
-  children: number;
+  childCount: number;
   setGuestPickerVisible: (visible: boolean) => void;
 }
 
@@ -31,12 +31,18 @@ export const SearchForm: React.FC<SearchFormProps> = ({
   searchDate,
   setDatePickerVisible,
   adults,
-  children,
+  childCount,
   setGuestPickerVisible,
 }) => {
   const router = useRouter();
-  const { t } = useAppContext();
-  const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  const { t, language } = useAppContext();
+  
+  const getFormattedDate = (date: Date) => {
+    return date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language === 'tr' ? 'tr-TR' : 'en-US', {
+      day: 'numeric',
+      month: 'short'
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -63,7 +69,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           <View style={styles.dropdown}>
             {searchText.length === 0 ? (
               <View style={styles.suggestions}>
-                <Text style={styles.dropdownTitle}>POPÜLER ROTALAR</Text>
+                <Text style={styles.dropdownTitle}>{t('common.popular_routes', { defaultValue: 'POPÜLER ROTALAR' })}</Text>
                 <View style={styles.tagList}>
                   {['Kapadokya', 'Antalya', 'Fethiye', 'Efes'].map(tag => (
                     <AnimatedButton key={tag} style={styles.tag} onPress={() => {setSearchText(tag); setSearchFocused(false);}} haptic="light">
@@ -74,12 +80,18 @@ export const SearchForm: React.FC<SearchFormProps> = ({
               </View>
             ) : (
               <View style={styles.results}>
-                {filteredTours.slice(0, 5).map(tour => (
-                  <TouchableOpacity key={tour.id} style={styles.resultItem} onPress={() => { router.push(`/tour/${tour.id}`); setSearchFocused(false); }}>
-                    <FontAwesome name="search" size={12} color={Colors.light.textMuted} />
-                    <Text style={styles.resultText}>{tour.title}</Text>
-                  </TouchableOpacity>
-                ))}
+                {filteredTours.length > 0 ? (
+                  filteredTours.slice(0, 5).map(tour => (
+                    <TouchableOpacity key={tour.id} style={styles.resultItem} onPress={() => { router.push(`/tour/${tour.id}`); setSearchFocused(false); }}>
+                      <FontAwesome name="search" size={12} color={Colors.light.textMuted} />
+                      <Text style={styles.resultText}>{tour.title}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.emptyResults}>
+                    <Text style={styles.emptyResultsText}>{t('common.no_results', { defaultValue: 'Sonuç bulunamadı' })}</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -90,7 +102,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
           <TouchableOpacity style={[styles.inputGroup, { flex: 1.2 }]} onPress={() => setDatePickerVisible(true)}>
             <FontAwesome name="calendar" size={18} color={Colors.light.secondary} style={styles.icon} />
             <Text style={styles.inputText}>
-              {searchDate.getDate()} {monthNames[searchDate.getMonth()]}
+              {getFormattedDate(searchDate)}
             </Text>
           </TouchableOpacity>
 
@@ -98,7 +110,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 
           <TouchableOpacity style={[styles.inputGroup, { flex: 1 }]} onPress={() => setGuestPickerVisible(true)}>
             <FontAwesome name="users" size={18} color={Colors.light.secondary} style={styles.icon} />
-            <Text style={styles.inputText}>{adults + children} Kişi</Text>
+            <Text style={styles.inputText}>{adults + childCount} {t('common.guests', { defaultValue: 'Kişi' })}</Text>
           </TouchableOpacity>
         </View>
 
@@ -141,7 +153,19 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   divider: { width: 1, height: 24, backgroundColor: 'rgba(0,0,0,0.05)' },
   
-  dropdown: { backgroundColor: '#fff', padding: Spacing.md, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  dropdown: { 
+    position: 'absolute',
+    top: 60, // Position below the first input
+    left: Spacing.sm,
+    right: Spacing.sm,
+    backgroundColor: '#fff', 
+    padding: Spacing.md, 
+    borderRadius: BorderRadius.lg,
+    zIndex: 1000,
+    ...Shadows.lg,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
   suggestions: { marginBottom: Spacing.sm },
   dropdownTitle: { fontSize: 11, fontWeight: '800', color: Colors.light.textMuted, marginBottom: 12, letterSpacing: 1 },
   tagList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -150,6 +174,8 @@ const styles = StyleSheet.create({
   results: { gap: 4 },
   resultItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f8fafc' },
   resultText: { fontSize: 14, fontWeight: '600', color: Colors.light.primary },
+  emptyResults: { paddingVertical: 16, alignItems: 'center' },
+  emptyResultsText: { fontSize: 13, color: Colors.light.textMuted, fontWeight: '600' },
 
   searchButton: { 
     backgroundColor: Colors.light.secondary, 

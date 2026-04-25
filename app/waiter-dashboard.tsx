@@ -16,7 +16,10 @@ import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, Easing, Dimensions } from 'react-native';
 import { scheduleFeedbackNotification } from '../services/notificationService';
-import { markMealRedeemed } from '../services/offlineStorage';
+import { markMealRedeemed, getOfflineTickets } from '../services/offlineStorage';
+import { getMerchantBalance } from '../services/financeService';
+import { SimulationService } from '../services/simulationService';
+import * as Haptics from 'expo-haptics';
 
 // Mock Bekleyen Rezervasyonlar
 const PENDING_RESERVATIONS = [
@@ -30,6 +33,30 @@ export default function WaiterDashboard() {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [merchantBalance, setMerchantBalance] = useState(14500); // Demo default
+  const [customerCount, setCustomerCount] = useState(12); // Demo default
+  const [simulationActive, setSimulationActive] = useState(false);
+  
+  useEffect(() => {
+    const init = async () => {
+        const bal = await getMerchantBalance('rest-1');
+        if (bal > 0) setMerchantBalance(bal);
+        
+        const sim = await SimulationService.isActive();
+        setSimulationActive(sim);
+    };
+    init();
+  }, [modalVisible]);
+
+  const toggleSimulation = async () => {
+    const next = !simulationActive;
+    await SimulationService.toggleMode(next);
+    setSimulationActive(next);
+    if (next) {
+        Alert.alert('Simülasyon Modu Aktif', 'Her 5 dakikada bir otomatik satın alma yapılacak ve bakiyeniz güncellenecektir.');
+    }
+  };
+
   const confettiAnims = React.useRef([...Array(20)].map(() => new Animated.Value(0))).current;
 
   const startConfetti = () => {
@@ -49,23 +76,51 @@ export default function WaiterDashboard() {
     return <View style={styles.loading}><ActivityIndicator size="large" color="#008cb3" /></View>;
   }
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     setIsScanning(false);
     try {
       const parsed = JSON.parse(data);
+      
+      // Bilet geçerlilik kontrolü (Offline Storage üzerinden simülasyon)
+      const allTickets = await getOfflineTickets();
+      const dbTicket = allTickets.find(t => t.id === parsed.ticketId);
+
+      if (dbTicket && dbTicket.mealRedeemed) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('⚠️ MÜKERRER KULLANIM', 'Bu bilet daha önce kullanılmıştır! Servis vermeyin.');
+        return;
+      }
+
       if (parsed.type === 'MEAL_REDEMPTION' || data.includes('VIP')) {
         const enhancedData = {
           ...parsed,
           isVip: data.includes('VIP') || parsed.isVip,
-          mealDescription: parsed.isVip ? 'VIP ÖZEL TADIM MENÜSÜ' : parsed.mealDescription
+          mealDescription: parsed.isVip ? 'VIP ÖZEL TADIM MENÜSÜ' : (parsed.mealDescription || 'Testi Kebabı Menüsü')
         };
+        
         setScannedData(enhancedData);
         setModalVisible(true);
-        if (enhancedData.isVip) startConfetti();
+
+        // VIP Durumu: Altın Sarısı + Titreşim (Komut 19)
+        if (enhancedData.isVip) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          startConfetti();
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
+        // Bilet okunduğu an 'Kullanıldı' olarak işaretle (Komut 19)
+        if (enhancedData.ticketId) {
+            await markMealRedeemed(enhancedData.ticketId);
+        }
+
       } else {
-        Alert.alert('Geçersiz QR', 'Bu bir yemek kuponu değil. Lütfen tur biletindeki yemek QR\'ını tarayın.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert('Geçersiz QR', 'Bu bir yemek kuponu değil.');
       }
     } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Hata', 'QR kodu okunamadı veya geçersiz format.');
     }
   };
@@ -77,38 +132,85 @@ export default function WaiterDashboard() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Garson Paneli 🍽️</Text>
-          <Text style={styles.headerSubtitle}>Restoran Operasyon</Text>
+          <View style={styles.roleBadge}>
+            <FontAwesome name="briefcase" size={10} color="#0369a1" />
+            <Text style={styles.roleBadgeText}>STAFF MODE</Text>
+          </View>
+          <Text style={styles.headerTitle}>Hızlı Terminal ⚡</Text>
         </View>
         <TouchableOpacity style={styles.profileBtn}>
-          <FontAwesome name="user-circle" size={24} color="#64748b" />
+          <FontAwesome name="power-off" size={20} color="#ef4444" />
         </TouchableOpacity>
       </View>
 
-      {/* QR Tara Butonu */}
-      <TouchableOpacity 
-        style={styles.scanBtnOuter} 
-        onPress={() => {
-          if (!permission.granted) {
-            requestPermission();
-          } else {
-            setIsScanning(true);
-          }
-        }}
-      >
-        <LinearGradient
-          colors={['#008cb3', '#005f80']}
-          style={styles.scanBtn}
-        >
-          <FontAwesome name="qrcode" size={40} color="#fff" />
-          <Text style={styles.scanBtnText}>QR KODU TARA</Text>
-          <Text style={styles.scanBtnSubtext}>Müşteri Menüsünü Onaylayın</Text>
+      {/* Komut 21: Transparent Merchant Dashboard (Finansal Durum Widget'ı) */}
+      <View style={styles.financeWidget}>
+        <LinearGradient colors={['#fff', '#f8fafc']} style={styles.financeCard}>
+          <View style={styles.financeRow}>
+            <View style={styles.financeItem}>
+                <Text style={styles.financeLabel}>Bugün Gelen</Text>
+                <Text style={styles.financeValue}>{customerCount}</Text>
+                <Text style={styles.financeSub}>Misafir</Text>
+            </View>
+            <View style={styles.financeSep} />
+            <View style={styles.financeItem}>
+                <Text style={styles.financeLabel}>Gelecek Toplam</Text>
+                <Text style={styles.financeValue}>₺{merchantBalance.toLocaleString('tr-TR')}</Text>
+                <Text style={styles.financeSub}>Bekleyen Ödeme</Text>
+            </View>
+          </View>
+          <View style={styles.financeFooter}>
+            <View style={styles.payoutInfo}>
+                <FontAwesome name="calendar-check-o" size={12} color="#16a34a" />
+                <Text style={styles.payoutText}>Sıradaki Ödeme Günü: <Text style={{fontWeight: '900'}}>Cuma</Text></Text>
+            </View>
+            <TouchableOpacity 
+                style={[styles.simToggle, simulationActive && styles.simToggleActive]} 
+                onPress={toggleSimulation}
+            >
+                <FontAwesome name={simulationActive ? "bolt" : "flask"} size={12} color={simulationActive ? "#fff" : "#6366f1"} />
+                <Text style={[styles.simToggleText, simulationActive && styles.simToggleTextActive]}>
+                    {simulationActive ? 'Simülasyon Aktif' : 'Test Modu'}
+                </Text>
+            </TouchableOpacity>
+          </View>
         </LinearGradient>
-      </TouchableOpacity>
+      </View>
+
+      {/* Komut 18: Devasa QR Tara Butonu (One-Tap Scanner) */}
+      <View style={styles.heroSection}>
+        <TouchableOpacity 
+          activeOpacity={0.8}
+          style={styles.scanBtnOuter} 
+          onPress={() => {
+            if (!permission.granted) {
+              requestPermission();
+            } else {
+              setIsScanning(true);
+            }
+          }}
+        >
+          <LinearGradient
+            colors={['#0284c7', '#0369a1']}
+            style={styles.scanBtn}
+          >
+            <View style={styles.iconCircle}>
+                <FontAwesome name="qrcode" size={60} color="#0284c7" />
+            </View>
+            <Text style={styles.scanBtnText}>QR OKUT</Text>
+            <Text style={styles.scanBtnSubtext}>Anında Doğrulama için Dokunun</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
 
       {/* Bekleyen Rezervasyonlar Listesi */}
       <View style={styles.listSection}>
-        <Text style={styles.sectionTitle}>Bekleyen Rezervasyonlar</Text>
+        <View style={styles.listHeaderRow}>
+            <Text style={styles.sectionTitle}>Bugünkü Rezervasyonlar</Text>
+            <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{PENDING_RESERVATIONS.length}</Text>
+            </View>
+        </View>
         <FlatList
           data={PENDING_RESERVATIONS}
           keyExtractor={(item) => item.id}
@@ -116,7 +218,7 @@ export default function WaiterDashboard() {
             <View style={styles.resCard}>
               <View style={styles.resInfo}>
                 <Text style={styles.resName}>{item.name}</Text>
-                <Text style={styles.resDetail}>{item.guests} Kişi · Saat: {item.time}</Text>
+                <Text style={styles.resDetail}>{item.guests} Kişi · {item.time}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: item.status === 'Onaylandı' ? '#dcfce7' : '#f1f5f9' }]}>
                 <Text style={[styles.statusText, { color: item.status === 'Onaylandı' ? '#16a34a' : '#64748b' }]}>{item.status}</Text>
@@ -138,27 +240,25 @@ export default function WaiterDashboard() {
               <FontAwesome name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <View style={styles.scannerFrame} />
-            <Text style={styles.cameraText}>Bilet üzerindeki Yemek QR'ını çerçeve içine getirin</Text>
+            <Text style={styles.cameraText}>{`Bilet üzerindeki Yemek QR'ını çerçeve içine getirin`}</Text>
           </SafeAreaView>
         </CameraView>
       </Modal>
 
-      {/* Menü Detay Modalı (Tam Ekran) */}
+      {/* Komut 19: Action-Oriented Success Screen (Hareket Emri Ekranı) */}
       <Modal visible={modalVisible} transparent={false} animationType="fade">
-        <View style={styles.modalContent}>
-          <LinearGradient colors={scannedData?.isVip ? ['#f59e0b', '#d97706'] : ['#f97316', '#ea580c']} style={styles.modalHeader}>
-            <FontAwesome name={scannedData?.isVip ? "diamond" : "check-circle"} size={60} color="#fff" />
-            <Text style={styles.modalTitle}>{scannedData?.isVip ? '💎 VIP MİSAFİR 💎' : 'DOĞRULAMA BAŞARILI!'}</Text>
+        <View style={[styles.modalContent, { backgroundColor: scannedData?.isVip ? '#fefce8' : '#f0fdf4' }]}>
+          <LinearGradient 
+            colors={scannedData?.isVip ? ['#f59e0b', '#d97706'] : ['#22c55e', '#16a34a']} 
+            style={styles.modalHeader}
+          >
+            <FontAwesome name={scannedData?.isVip ? "diamond" : "check-circle"} size={80} color="#fff" />
+            <Text style={styles.modalTitle}>
+                {scannedData?.isVip ? 'VIP MİSAFİR' : 'ONAYLANDI!'}
+            </Text>
           </LinearGradient>
 
-          {scannedData?.isVip && (
-            <View style={styles.vipActionBox}>
-              <FontAwesome name="star" size={16} color="#d97706" />
-              <Text style={styles.vipActionText}>Lütfen misafirimize özel ikramını ve önceliğini sunun.</Text>
-            </View>
-          )}
-
-          {/* Confetti Effect Rendering */}
+          {/* Confetti Effect Rendering for VIP */}
           {scannedData?.isVip && confettiAnims.map((anim, i) => {
             const left = Math.random() * 100;
             const size = 5 + Math.random() * 10;
@@ -194,34 +294,33 @@ export default function WaiterDashboard() {
               />
             );
           })}
-          
-          <View style={styles.modalBody}>
-            <Text style={styles.menuLabel}>Müşteri Satın Alımı:</Text>
-            <View style={styles.menuCard}>
-              <Text style={styles.menuTitle}>{scannedData?.mealDescription || 'Özel Menü'}</Text>
-              <View style={styles.menuDivider} />
-              <View style={styles.menuRow}>
-                <FontAwesome name="users" size={16} color="#64748b" />
-                <Text style={styles.menuValue}>{scannedData?.guests} Kişilik hakediş</Text>
-              </View>
-              <View style={styles.menuRow}>
-                <FontAwesome name="info-circle" size={16} color="#64748b" />
-                <Text style={styles.menuValue}>Garson Notu: İçecek dahil menü.</Text>
-              </View>
+
+          <View style={styles.actionBody}>
+            <Text style={styles.actionInstruction}>PERSONEL HAREKET EMRİ:</Text>
+            <View style={[styles.actionCard, { borderColor: scannedData?.isVip ? '#fde68a' : '#bbf7d0' }]}>
+                <Text style={styles.actionText}>
+                    {scannedData?.isVip 
+                        ? 'Lütfen misafirimize ÖNCELİKLİ MASA ve VIP İKRAM (Şarap/Meze) sunun.'
+                        : `Masaya ${scannedData?.guests} Kişilik ${scannedData?.mealDescription} Servis Edin.`}
+                </Text>
+            </View>
+
+            <View style={styles.guestDetailBox}>
+                <Text style={styles.guestDetailTitle}>Misafir Bilgisi:</Text>
+                <Text style={styles.guestDetailValue}>{scannedData?.traveler || 'Müşteri'}</Text>
             </View>
 
             <TouchableOpacity 
-              style={styles.confirmBtn} 
-              onPress={async () => {
-                // Yerel durumu güncelle ve bildirimi planla
-                if (scannedData?.ticketId) {
-                  await markMealRedeemed(scannedData.ticketId);
-                  scheduleFeedbackNotification(scannedData.restaurantName || 'Restoran');
+              style={[styles.confirmBtn, { backgroundColor: scannedData?.isVip ? '#d97706' : '#16a34a' }]} 
+              onPress={() => {
+                if (scannedData?.restaurantName) {
+                    scheduleFeedbackNotification(scannedData.restaurantName);
                 }
                 setModalVisible(false);
+                setScannedData(null);
               }}
             >
-              <Text style={styles.confirmBtnText}>SERVİSİ BAŞLAT</Text>
+              <Text style={styles.confirmBtnText}>SERVİS BAŞLATILDI</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -242,53 +341,88 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#0f172a' },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: '#0f172a' },
   headerSubtitle: { fontSize: 13, color: '#64748b', fontWeight: '500' },
-  profileBtn: { padding: 5 },
+  profileBtn: { padding: 10, backgroundColor: '#fef2f2', borderRadius: 12 },
   
-  scanBtnOuter: { margin: 20, borderRadius: 24, overflow: 'hidden', elevation: 8, shadowColor: '#008cb3', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20 },
-  scanBtn: { paddingVertical: 40, alignItems: 'center', justifyContent: 'center' },
-  scanBtnText: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 16 },
-  scanBtnSubtext: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600', marginTop: 4 },
+  roleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 4, gap: 5 },
+  roleBadgeText: { fontSize: 9, fontWeight: '800', color: '#0369a1' },
+
+  financeWidget: { paddingHorizontal: 20, marginTop: 10 },
+  financeCard: { padding: 20, borderRadius: 24, borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+  financeRow: { flexDirection: 'row', alignItems: 'center' },
+  financeItem: { flex: 1, alignItems: 'center' },
+  financeLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase' },
+  financeValue: { fontSize: 24, fontWeight: '900', color: '#0f172a' },
+  financeSub: { fontSize: 10, color: '#64748b', fontWeight: '600', marginTop: 2 },
+  financeSep: { width: 1, height: 40, backgroundColor: '#e2e8f0' },
+  financeFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  payoutInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  payoutText: { fontSize: 12, color: '#475569', fontWeight: '600' },
+  
+  simToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#f5f3ff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: '#ddd6fe' },
+  simToggleActive: { backgroundColor: '#6366f1', borderColor: '#4f46e5' },
+  simToggleText: { fontSize: 11, fontWeight: '800', color: '#6366f1' },
+  simToggleTextActive: { color: '#fff' },
+
+  heroSection: { padding: 20 },
+  scanBtnOuter: { borderRadius: 32, overflow: 'hidden', elevation: 15, shadowColor: '#0284c7', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24 },
+  scanBtn: { paddingVertical: 60, alignItems: 'center', justifyContent: 'center' },
+  iconCircle: { width: 100, height: 100, backgroundColor: '#fff', borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  scanBtnText: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: 1 },
+  scanBtnSubtext: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600', marginTop: 8 },
   
   listSection: { flex: 1, paddingHorizontal: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginBottom: 16 },
+  listHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  countBadge: { backgroundColor: '#0284c7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  countBadgeText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+
   resCard: { 
     flexDirection: 'row', 
     backgroundColor: '#fff', 
     padding: 16, 
-    borderRadius: 16, 
+    borderRadius: 20, 
     marginBottom: 12, 
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#f1f5f9'
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2
   },
   resInfo: { flex: 1 },
-  resName: { fontSize: 15, fontWeight: '800', color: '#0f172a' },
-  resDetail: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  statusText: { fontSize: 11, fontWeight: '700' },
+  resName: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
+  resDetail: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  statusText: { fontSize: 12, fontWeight: '700' },
   
   cameraOverlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center', paddingVertical: 40 },
   closeCamera: { alignSelf: 'flex-end', marginRight: 20, padding: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
-  scannerFrame: { width: 250, height: 250, borderWidth: 2, borderColor: '#fff', borderRadius: 24, backgroundColor: 'transparent' },
-  cameraText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center', paddingHorizontal: 40 },
+  scannerFrame: { width: 280, height: 280, borderWidth: 4, borderColor: '#fff', borderRadius: 40, backgroundColor: 'transparent' },
+  cameraText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', paddingHorizontal: 40, backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 12, borderRadius: 20 },
   
   modalContent: { flex: 1, backgroundColor: '#fff' },
-  modalHeader: { height: '30%', justifyContent: 'center', alignItems: 'center' },
-  modalTitle: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 20 },
+  modalHeader: { height: '35%', justifyContent: 'center', alignItems: 'center' },
+  modalTitle: { color: '#fff', fontSize: 32, fontWeight: '900', marginTop: 20, textAlign: 'center', paddingHorizontal: 20 },
   modalBody: { padding: 30, flex: 1 },
-  menuLabel: { fontSize: 14, color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', marginBottom: 12 },
-  menuCard: { backgroundColor: '#fff7ed', padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#ffedd5', marginBottom: 30 },
-  menuTitle: { fontSize: 20, fontWeight: '900', color: '#ea580c', marginBottom: 15 },
-  menuDivider: { height: 1, backgroundColor: '#fed7aa', marginBottom: 15 },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  menuValue: { fontSize: 15, fontWeight: '700', color: '#9a3412' },
-  confirmBtn: { backgroundColor: '#ea580c', height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center', shadowColor: '#ea580c', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
-  confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  
+  actionBody: { padding: 24, flex: 1, justifyContent: 'center' },
+  actionInstruction: { fontSize: 14, fontWeight: '900', color: '#64748b', letterSpacing: 1.5, marginBottom: 16, textAlign: 'center' },
+  actionCard: { backgroundColor: '#fff', borderWidth: 3, borderRadius: 24, padding: 24, marginBottom: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
+  actionText: { fontSize: 24, fontWeight: '900', color: '#0f172a', textAlign: 'center', lineHeight: 34 },
+  
+  guestDetailBox: { alignItems: 'center', marginBottom: 40 },
+  guestDetailTitle: { fontSize: 13, color: '#94a3b8', fontWeight: '700', marginBottom: 4 },
+  guestDetailValue: { fontSize: 18, fontWeight: '800', color: '#334155' },
+
+  confirmBtn: { backgroundColor: '#ea580c', height: 70, borderRadius: 24, justifyContent: 'center', alignItems: 'center', shadowColor: '#ea580c', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 15, elevation: 10 },
+  confirmBtnText: { color: '#fff', fontSize: 20, fontWeight: '900' },
 
   // VIP Enhancements
-  vipActionBox: { backgroundColor: '#fffbeb', padding: 12, borderRadius: 12, marginHorizontal: 30, marginTop: -25, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#fde68a', zIndex: 10 },
-  vipActionText: { color: '#b45309', fontSize: 13, fontWeight: '800', flex: 1 },
+  vipActionBox: { backgroundColor: '#fffbeb', padding: 16, borderRadius: 16, marginHorizontal: 30, marginTop: -35, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: '#fde68a', zIndex: 10 },
+  vipActionText: { color: '#b45309', fontSize: 14, fontWeight: '800', flex: 1 },
   confetti: { position: 'absolute', top: 0, zIndex: 99, borderRadius: 2 },
 });

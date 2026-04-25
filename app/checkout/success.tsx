@@ -33,7 +33,7 @@ export default function CheckoutSuccessScreen() {
 
                 <Text style={styles.title}>Rezervasyon Basarili!</Text>
                 <Text style={styles.subtitle}>
-                    Ödemeniz güvenli bir şekilde ulaştı. E-biletiniz cihazınıza kaydedildi, "Çevrimdışı Biletlerim" kısmından internet olmadan da görüntüleyebilirsiniz.
+                    {`Ödemeniz güvenli bir şekilde ulaştı. E-biletiniz cihazınıza kaydedildi, "Çevrimdışı Biletlerim" kısmından internet olmadan da görüntüleyebilirsiniz.`}
                 </Text>
 
                 <View style={styles.ticketBox}>

@@ -206,7 +206,7 @@ export default function AgencyAuthScreen() {
                                         <View style={styles.premiumContainer}>
                                             <Text style={styles.premiumBadge}>ÖZEL ACENTA FIRSATI</Text>
                                             <Text style={styles.premiumTitle}>Müşterilerinize Üst Sıralardan Ulaşın</Text>
-                                            <Text style={styles.premiumDesc}>VIP Partner Aboneliği ile turlarınızı aramalarda en öne çıkararak satışlarınızı %300'e kadar artırın.</Text>
+                                            <Text style={styles.premiumDesc}>{`VIP Partner Aboneliği ile turlarınızı aramalarda en öne çıkararak satışlarınızı %300'e kadar artırın.`}</Text>
 
                                             <TouchableOpacity style={styles.pricingCard}>
                                                 <View style={styles.pricingHeader}>
@@ -220,7 +220,7 @@ export default function AgencyAuthScreen() {
                                                 </View>
                                                 <View style={styles.featureList}>
                                                     <Text style={styles.featureItem}><FontAwesome name="check" color="#10b981" /> Sınırsız Tur Ekleme</Text>
-                                                    <Text style={styles.featureItem}><FontAwesome name="check" color="#10b981" /> "Sponsorlu VIP" Etiketi <Text style={styles.badgeHighlight}>ETKİLİ</Text></Text>
+                                                    <Text style={styles.featureItem}><FontAwesome name="check" color="#10b981" /> {` "Sponsorlu VIP" Etiketi `}<Text style={styles.badgeHighlight}>ETKİLİ</Text></Text>
                                                     <Text style={styles.featureItem}><FontAwesome name="check" color="#10b981" /> Aramalarda Üst Sıraya Çıkma</Text>
                                                 </View>
                                                 <TouchableOpacity style={styles.buyBtnOutline}>

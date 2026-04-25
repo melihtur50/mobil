@@ -186,17 +186,20 @@ export const formatCurrency = (amount: number, currency: string, locale: string 
 export const formatPriceWithContext = (amount: number, currency: string, userLanguage: string) => {
   const mainPrice = formatCurrency(amount, currency, userLanguage === 'tr' ? 'tr-TR' : 'en-US');
   
-  // Calculate TRY equivalent if not already in TRY for estimates
-  const amountInTry = amount * (MOCK_EXCHANGE_RATES[currency] || 1);
+  // Standardize to TRY for cross-currency estimation
+  const rateToTry = MOCK_EXCHANGE_RATES[currency] || 1;
+  const amountInTry = amount * rateToTry;
 
+  // For Chinese users, show approximate CNY (Yuan) estimate
   if (userLanguage === 'zh') {
-    const amountInCny = amountInTry / MOCK_EXCHANGE_RATES.CNY;
+    const amountInCny = amountInTry / (MOCK_EXCHANGE_RATES.CNY || 4.5);
     return `${mainPrice} / ~¥${Math.round(amountInCny)}`;
   }
   
+  // For Russian users, show approximate USD estimate as a stable global reference
   if (userLanguage === 'ru') {
-    const amountInUsd = amountInTry / MOCK_EXCHANGE_RATES.USD;
-    return `${mainPrice} ($${Math.round(amountInUsd)})`;
+    const amountInUsd = amountInTry / (MOCK_EXCHANGE_RATES.USD || 33.2);
+    return `${mainPrice} (~$${Math.round(amountInUsd)})`;
   }
 
   return mainPrice;

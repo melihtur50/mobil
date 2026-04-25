@@ -47,7 +47,7 @@ export default function FinanceScreen() {
                 <View style={styles.requestCard}>
                     <Text style={styles.requestTitle}>Ödeme Talebi Oluştur</Text>
                     <Text style={styles.requestDesc}>
-                        Mevcut bakiyeniz minimum ödeme eşiği olan <Text style={{ fontWeight: '800', color: '#0f172a' }}>₺5.000</Text>'nin üzerinde olduğu için hemen banka hesabınıza transfer talep edebilirsiniz.
+                        {`Mevcut bakiyeniz minimum ödeme eşiği olan `}<Text style={{ fontWeight: '800', color: '#0f172a' }}>₺5.000</Text>{`'nin üzerinde olduğu için hemen banka hesabınıza transfer talep edebilirsiniz.`}
                     </Text>
                     <TouchableOpacity style={styles.requestBtn}>
                         <FontAwesome name="check-circle-o" size={16} color="#fff" style={{ marginRight: 8 }} />

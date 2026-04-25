@@ -59,7 +59,7 @@ export default function CappoAssistant() {
             router.push('/(tabs)/explore');
             toggleAssistant();
         } else if (action === 'tickets') {
-            router.push('/tickets');
+            router.push('/offline-tickets');
             toggleAssistant();
         } else if (action === 'orders') {
             router.push('/past-orders');

@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TextInput, TouchableOpacity, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
+import { useLocalSearchParams } from 'expo-router';
+
 export default function ExploreScreen() {
+  const { type } = useLocalSearchParams<{ type?: string }>();
+  const isComboView = type === 'combo';
+  
   const [destination, setDestination] = useState('');
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
@@ -13,9 +18,15 @@ export default function ExploreScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hayalindeki Turu Bul</Text>
-          <Text style={styles.headerSubtitle}>Doğru filtrelerle en uygun tatili saniyeler içinde planla.</Text>
+        <View style={[styles.header, isComboView && { backgroundColor: '#f97316' }]}>
+          <Text style={styles.headerTitle}>
+            {isComboView ? '🔥 Özel Kombo Paketler' : 'Hayalindeki Turu Bul'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {isComboView 
+              ? 'Havalimanına özel indirimli Tur + Yemek paketlerini keşfet.' 
+              : 'Doğru filtrelerle en uygun tatili saniyeler içinde planla.'}
+          </Text>
         </View>
 
         <View style={styles.formContainer}>

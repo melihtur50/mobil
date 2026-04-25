@@ -1,14 +1,42 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Switch } from 'react-native';
+import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Switch, StatusBar } from 'react-native';
 import { fetchTours, Tour, TourkiaPoints } from '../../services/tourApi';
 import { saveTicketOffline } from '../../services/offlineStorage';
 import { scheduleMealReminder } from '../../services/notificationService';
+import { useAppContext } from '../../context/AppContext';
+import { processCommissionSplit } from '../../services/financeService';
+
+const CountdownTimer = () => {
+    const [seconds, setSeconds] = useState(15 * 60);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSeconds(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+
+    return (
+        <View style={styles.fomoBanner}>
+            <View style={styles.timerRow}>
+                <FontAwesome name="hourglass-half" size={14} color="#dc2626" />
+                <Text style={styles.timerText}>{minutes}:{secs < 10 ? `0${secs}` : secs}</Text>
+            </View>
+            <Text style={styles.fomoText}>
+                Kapadokya çok yoğun! Bu VIP paket <Text style={{fontWeight: '900'}}>15 dakika</Text> boyunca sizin için rezerve edilmiştir.
+            </Text>
+        </View>
+    );
+};
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { currency, language } = useAppContext();
     const [tour, setTour] = useState<Tour | null>(null);
     
     // Form States
@@ -57,6 +85,15 @@ export default function CheckoutScreen() {
             // Akıllı bildirimi planla
             await scheduleMealReminder(newTicket);
 
+            // Komut 20: Auto-Commission-Splitter (Akıllı Komisyon Motoru)
+            // Ödeme sonrası parayı Tourkia ve İşletme arasında bölüştür
+            await processCommissionSplit(
+                finalAmount, 
+                'rest-1', // Demo restoran ID
+                tour!.id,
+                0.15 // %15 komisyon
+            );
+
             alert(`🎉 %5 Kazanç: Bu alışverişten +${earned} TourkiaPuan hesabınıza eklendi.`);
             router.replace({ 
                 pathname: '/checkout/success', 
@@ -90,6 +127,8 @@ export default function CheckoutScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     
+                    <CountdownTimer />
+
                     {/* Sipariş Özeti */}
                     <Text style={styles.sectionTitle}>Sipariş Özeti</Text>
                     <View style={styles.summaryCard}>
@@ -147,16 +186,65 @@ export default function CheckoutScreen() {
                         </View>
                     )}
 
-                    {/* Fatura / İletişim Bilgileri */}
-                    <Text style={styles.sectionTitle}>İletişim Bilgileriniz</Text>
+                    {/* Komut 13: Frictionless Guest Checkout (Pürüzsüz Hızlı Ödeme) */}
+                    <Text style={styles.sectionTitle}>Hızlı Alışveriş Bilgileri</Text>
                     <View style={styles.inputGroup}>
-                        <TextInput style={styles.input} placeholder="Ad Soyad" defaultValue="Demo Kullanıcı" />
-                        <TextInput style={styles.input} placeholder="E-posta" defaultValue="demo@tourkia.com" keyboardType="email-address" />
-                        <TextInput style={styles.input} placeholder="Telefon Numarası" defaultValue="+90 532 123 4567" keyboardType="phone-pad" />
+                        <View style={styles.guestNote}>
+                            <FontAwesome name="flash" size={14} color="#f59e0b" />
+                            <Text style={styles.guestNoteText}>Hızlı Kayıt: Ödemeden sonra hesabınız otomatik oluşturulacaktır.</Text>
+                        </View>
+                        <TextInput style={styles.input} placeholder="Ad Soyad" placeholderTextColor="#94a3b8" />
+                        <TextInput style={styles.input} placeholder="E-posta Adresi" keyboardType="email-address" placeholderTextColor="#94a3b8" />
+                        <View style={styles.whatsappInputRow}>
+                            <FontAwesome name="whatsapp" size={18} color="#25D366" style={{ marginRight: 8 }} />
+                            <TextInput 
+                                style={[styles.input, { flex: 1, borderBottomWidth: 0, marginBottom: 0 }]} 
+                                placeholder="WhatsApp Numarası (+90...)" 
+                                keyboardType="phone-pad" 
+                                placeholderTextColor="#94a3b8"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Komut 14: Localized Payment Gateway UI (Dile Göre Ödeme Yöntemi) */}
+                    <Text style={styles.sectionTitle}>Ödeme Yöntemi</Text>
+                    <View style={styles.paymentSelector}>
+                        {language === 'zh' ? (
+                            <>
+                                <TouchableOpacity style={styles.paymentMethod}>
+                                    <FontAwesome name="cc-visa" size={20} color="#00A3EE" />
+                                    <Text style={styles.paymentMethodText}>Alipay (支付宝)</Text>
+                                    <FontAwesome name="circle-o" size={18} color="#cbd5e1" style={{ marginLeft: 'auto' }} />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.paymentMethod}>
+                                    <FontAwesome name="wechat" size={20} color="#09B83E" />
+                                    <Text style={styles.paymentMethodText}>WeChat Pay (微信支付)</Text>
+                                    <FontAwesome name="circle-o" size={18} color="#cbd5e1" style={{ marginLeft: 'auto' }} />
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity style={styles.paymentMethod}>
+                                    <FontAwesome name="apple" size={20} color="#000" />
+                                    <Text style={styles.paymentMethodText}>Apple Pay</Text>
+                                    <FontAwesome name="circle-o" size={18} color="#cbd5e1" style={{ marginLeft: 'auto' }} />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.paymentMethod}>
+                                    <FontAwesome name="google" size={20} color="#4285F4" />
+                                    <Text style={styles.paymentMethodText}>Google Pay</Text>
+                                    <FontAwesome name="circle-o" size={18} color="#cbd5e1" style={{ marginLeft: 'auto' }} />
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        <TouchableOpacity style={[styles.paymentMethod, styles.paymentMethodActive]}>
+                            <FontAwesome name="credit-card" size={18} color="#0071c2" />
+                            <Text style={[styles.paymentMethodText, { color: '#0071c2' }]}>Kredi Kartı / Banka Kartı</Text>
+                            <FontAwesome name="check-circle" size={18} color="#0071c2" style={{ marginLeft: 'auto' }} />
+                        </TouchableOpacity>
                     </View>
 
                     {/* Kredi Kartı Formu */}
-                    <Text style={styles.sectionTitle}>Ödeme Bilgileri</Text>
+                    <Text style={styles.sectionTitle}>Kart Bilgileri</Text>
                     
                     <View style={styles.cardVisual}>
                         <FontAwesome name="cc-visa" size={40} color="#fff" style={styles.cardLogo} />
@@ -200,10 +288,25 @@ export default function CheckoutScreen() {
                         <FontAwesome name="lock" size={12} /> Tüm işlemleriniz 256-bit SSL sertifikası ile şifrelenmektedir.
                     </Text>
 
+                    <View style={styles.trustBadgesBox}>
+                        <View style={styles.trustBadgeItem}>
+                            <FontAwesome name="shield" size={18} color="#10b981" />
+                            <Text style={styles.trustBadgeLabel}>256-bit SSL</Text>
+                        </View>
+                        <View style={styles.trustBadgeItem}>
+                            <FontAwesome name="check-square-o" size={18} color="#0071c2" />
+                            <Text style={styles.trustBadgeLabel}>Secure Checkout</Text>
+                        </View>
+                        <View style={styles.trustBadgeItem}>
+                            <FontAwesome name="certificate" size={18} color="#f59e0b" />
+                            <Text style={styles.trustBadgeLabel}>TÜRSAB Onaylı</Text>
+                        </View>
+                    </View>
+
                     <View style={styles.disclaimerBox}>
                         <FontAwesome name="info-circle" size={14} color="#64748b" style={{ marginRight: 8 }} />
                         <Text style={styles.disclaimerText}>
-                            <Text style={{ fontWeight: '700' }}>Önemli Not:</Text> "Ön Ödemeli Menü" tutarı Tourkia havuzunda toplanır. Tur sırasında vereceğiniz "Ekstra Siparişler" ise doğrudan restoranda ödenecektir.
+                            <Text style={{ fontWeight: '700' }}>Önemli Not:</Text> {` "Ön Ödemeli Menü" tutarı Tourkia havuzunda toplanır. Tur sırasında vereceğiniz "Ekstra Siparişler" ise doğrudan restoranda ödenecektir.`}
                         </Text>
                     </View>
                     
@@ -279,5 +382,23 @@ const styles = StyleSheet.create({
 
     bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', padding: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 20, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
     payBtn: { backgroundColor: '#0071c2', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-    payBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' }
+    payBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
+
+    guestNote: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fffbeb', padding: 10, borderRadius: 8, marginBottom: 16, gap: 8, borderWidth: 1, borderColor: '#fde68a' },
+    guestNoteText: { fontSize: 11, color: '#b45309', fontWeight: '700' },
+    whatsappInputRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+
+    paymentSelector: { marginBottom: 24, gap: 10 },
+    paymentMethod: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', gap: 12 },
+    paymentMethodActive: { borderColor: '#0071c2', backgroundColor: '#f0f9ff' },
+    paymentMethodText: { fontSize: 14, fontWeight: '700', color: '#475569' },
+
+    fomoBanner: { backgroundColor: '#fef2f2', padding: 16, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#fecaca' },
+    timerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+    timerText: { fontSize: 18, fontWeight: '900', color: '#dc2626' },
+    fomoText: { fontSize: 13, color: '#991b1b', lineHeight: 18, fontWeight: '500' },
+
+    trustBadgesBox: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginTop: 20, backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0' },
+    trustBadgeItem: { alignItems: 'center', gap: 6 },
+    trustBadgeLabel: { fontSize: 10, fontWeight: '800', color: '#64748b' }
 });

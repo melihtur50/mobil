@@ -22,7 +22,10 @@
     "discover_tours": "Turları Keşfet",
     "buy_now": "Satın Al",
     "add_to_cart": "Sepete Ekle",
-    "search": "Ara"
+    "search": "Ara",
+    "guests": "Kişi",
+    "no_results": "Sonuç bulunamadı",
+    "trending_categories": "Trend Kategoriler"
   },
   "button": {
     "buy_now": "Satın Al",

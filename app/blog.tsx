@@ -83,7 +83,7 @@ export default function BlogScreen() {
                         <Text style={styles.dropdownValue}>Hiçbiri</Text>
                         <FontAwesome name="chevron-down" size={12} color="#64748b" />
                     </TouchableOpacity>
-                    <Text style={styles.seoHelperText}>Yazının sonuna 'Hemen İncele' butonu koyar.</Text>
+                    <Text style={styles.seoHelperText}>{`Yazının sonuna 'Hemen İncele' butonu koyar.`}</Text>
 
                     {/* Yayımla Butonu */}
                     <TouchableOpacity style={styles.publishBtn}>

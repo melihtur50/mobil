@@ -91,7 +91,7 @@ export default function ChatsScreen() {
                                 <View style={styles.lastMessageBox}>
                                     <Text style={styles.lastMessageLabel} numberOfLines={2}>
                                         <Text style={isActive ? styles.labelActive : styles.labelArchived}>Son Mesaj: </Text>
-                                        <Text style={styles.messageContent}>"{room.lastMessagePrefix}{room.lastMessageText}" </Text>
+                                        <Text style={styles.messageContent}>{`"${room.lastMessagePrefix}${room.lastMessageText}" `}</Text>
                                         <Text style={styles.messageAuthor}>{room.lastMessageAuthor}</Text>
                                     </Text>
                                 </View>

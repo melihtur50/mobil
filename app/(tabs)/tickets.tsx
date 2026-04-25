@@ -73,7 +73,36 @@ export default function TicketsTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('active');
+  const [isOffline, setIsOffline] = useState(false);
   const [seedBusy, setSeedBusy] = useState(false);
+  
+  // ── Network Detection ──────────────────────────────────────────────────
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOffline(!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ── Brightness Control (Komut 17) ──────────────────────────────────────
+  useEffect(() => {
+    let originalBrightness = 0.5;
+    
+    const boostBrightness = async () => {
+      const { status } = await Brightness.requestPermissionsAsync();
+      if (status === 'granted') {
+        originalBrightness = await Brightness.getBrightnessAsync();
+        await Brightness.setBrightnessAsync(1.0);
+      }
+    };
+
+    const restoreBrightness = async () => {
+      await Brightness.setBrightnessAsync(originalBrightness);
+    };
+
+    boostBrightness();
+    return () => { restoreBrightness(); };
+  }, []);
   const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -244,6 +273,16 @@ export default function TicketsTab() {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+
+      {/* ── Komut 17: Offline Mode Banner ── */}
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <FontAwesome name="wifi" size={14} color="#fff" />
+          <Text style={styles.offlineBannerText}>
+            Çevrimdışı Mod Aktif: Biletlerinize internet olmadan erişebilirsiniz.
+          </Text>
+        </View>
+      )}
 
       {/* ── İçerik ── */}
       {loading ? (
@@ -448,4 +487,17 @@ const styles = StyleSheet.create({
     borderColor: '#bae6fd',
   },
   demoBtnText: { color: '#008cb3', fontSize: 15, fontWeight: '800' },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#334155',
+    paddingVertical: 10,
+    gap: 10,
+  },
+  offlineBannerText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });

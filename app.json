@@ -14,6 +14,8 @@
       "bundleIdentifier": "com.melihtur.tourkia",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Tourkia, size en yakın anlaşmalı restoranları ve turları göstermek için konumunuza ihtiyaç duyar.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Tourkia, havaalanına geldiğinizde size yardımcı olmak için arka planda konumunuza ihtiyaç duyar.",
+        "NSLocationAlwaysUsageDescription": "Tourkia, havaalanına geldiğinizde size yardımcı olmak için arka planda konumunuza ihtiyaç duyar.",
         "NSCameraUsageDescription": "Tourkia, QR kod biletlerinizi ve voucherlarınızı okumak için kameranıza ihtiyaç duyar.",
         "NSPhotoLibraryUsageDescription": "Profil fotoğrafınızı güncellemek için galerinize erişim izni gereklidir."
       }
@@ -27,6 +29,7 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
         "CAMERA",
         "NOTIFICATIONS"
       ]
@@ -40,7 +43,9 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Tourkia, size en yakın restoranları göstermek için konumunuza ihtiyaç duyar."
+          "locationWhenInUsePermission": "Tourkia, size en yakın restoranları göstermek için konumunuza ihtiyaç duyar.",
+          "locationAlwaysAndWhenInUsePermission": "Tourkia, havaalanına geldiğinizde size yardımcı olmak için arka planda konumunuza ihtiyaç duyar.",
+          "isAndroidBackgroundLocationEnabled": true
         }
       ],
       [
@@ -52,7 +57,8 @@
           "backgroundColor": "#001A33"
         }
       ],
-      "expo-camera"
+      "expo-camera",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

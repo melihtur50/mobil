@@ -16,18 +16,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Ana Sayfa',
+          title: 'Keşfet',
         }}
       />
       
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Keşfet',
-          href: userRole === 'agency' ? null : undefined,
-        }}
-      />
-
       <Tabs.Screen
         name="lezzet"
         options={{
@@ -39,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tickets"
         options={{
-          title: 'Biletler',
+          title: 'Biletlerim',
           href: userRole === 'agency' ? null : undefined,
         }}
       />
@@ -47,11 +39,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: userRole === 'agency' ? 'Acenta' : 'Profil',
+          title: 'Profil',
         }}
       />
 
       {/* Hidden Screens */}
+      <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />
       <Tabs.Screen name="add-tour" options={{ href: null }} />
       <Tabs.Screen name="favorites" options={{ href: null }} />

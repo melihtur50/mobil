@@ -1,26 +1,81 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, Dimensions, ImageBackground, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Modal, Image, Linking } from 'react-native';
+import { 
+    Dimensions, 
+    Image, 
+    SafeAreaView, 
+    ScrollView, 
+    StyleSheet, 
+    Text, 
+    TouchableOpacity, 
+    View, 
+    FlatList,
+    Modal,
+    StatusBar
+} from 'react-native';
+import Animated, { 
+    useSharedValue, 
+    useAnimatedScrollHandler, 
+    useAnimatedStyle, 
+    interpolate, 
+    Extrapolation,
+    withRepeat,
+    withSequence,
+    withTiming
+} from 'react-native-reanimated';
+
+const PulsingBadge = ({ text }: { text: string }) => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 500 }),
+        withTiming(1, { duration: 500 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.pulsingBadge, animatedStyle]}>
+      <Text style={styles.pulsingBadgeText}>{text}</Text>
+    </Animated.View>
+  );
+};
+import { ImmersiveMediaHeader } from '../../components/common/ImmersiveMediaHeader';
 import { fetchTours, Tour, getDisplayPrice, formatPriceWithContext } from '../../services/tourApi';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar';
 import { useAppContext } from '../../context/AppContext';
 
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT = 350;
+const HEADER_HEIGHT = height * 0.5;
+const ANATOLIAN_SAFFRON = '#FF9F00';
 
 export default function TourDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { currency, language } = useAppContext();
-    const scrollY = new Animated.Value(0);
+    
+    // Reanimated Shared Value for scroll tracking
+    const scrollY = useSharedValue(0);
+    const scrollHandler = useAnimatedScrollHandler((event) => {
+        scrollY.value = event.contentOffset.y;
+    });
+
     const [tour, setTour] = useState<Tour | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [lightboxVisible, setLightboxVisible] = useState(false);
     const [activeImage, setActiveImage] = useState<string | null>(null);
 
     // Meteorology_Bridge Simulation Logic
-    const [windRiskProbability] = useState(82); // Simulated % chance of cancellation
+    const [windRiskProbability] = useState(82);
 
     useEffect(() => {
         const loadTour = async () => {
@@ -30,7 +85,6 @@ export default function TourDetailScreen() {
         };
         loadTour();
 
-        // Live_Pulse_Sync Sub
         const { subscribeTours } = require('../../services/tourApi');
         const unsubscribe = subscribeTours(() => {
             loadTour();
@@ -40,27 +94,24 @@ export default function TourDetailScreen() {
 
     if (!tour) return <View style={styles.loadingContainer}><Text>Yükleniyor...</Text></View>;
 
+    // Prepare media for header (First item is a high-quality video)
+    const mediaItems = [
+        { 
+            id: 'video-main', 
+            type: 'video' as const, 
+            url: tour.id === '1' 
+                ? 'https://player.vimeo.com/external/370331493.hd.mp4?s=34a41f6f1c469b6151f151528646b146b95b8d00&profile_id=175' // Cappadocia Balloon
+                : 'https://player.vimeo.com/external/434045526.hd.mp4?s=69431497223e3e2b262d3a3f5f3e2a225e5e2e2e&profile_id=175' // Generic travel
+        },
+        { id: 'img-main', type: 'image' as const, url: tour.image },
+        ...(tour.gallery?.map(img => ({ id: img.id, type: 'image' as const, url: img.url })) || [])
+    ];
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* Parallax Arka Plan Görseli */}
-            <Animated.View style={[ styles.imageContainer, {
-                transform: [{
-                    translateY: scrollY.interpolate({
-                        inputRange: [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-                        outputRange: [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
-                    })
-                }, {
-                    scale: scrollY.interpolate({
-                        inputRange: [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-                        outputRange: [2, 1, 1]
-                    })
-                }]
-            }]}>
-                <ImageBackground source={{ uri: tour.image }} style={styles.image} />
-                <View style={styles.imageOverlay} />
-            </Animated.View>
+            <ImmersiveMediaHeader media={mediaItems} scrollY={scrollY} />
 
             {/* Tepe Navigasyon Çubuğu (Geri Butonu ve Kalp) */}
             <SafeAreaView style={styles.topBar}>
@@ -75,10 +126,10 @@ export default function TourDetailScreen() {
             <Animated.ScrollView
                 style={styles.scrollArea}
                 showsVerticalScrollIndicator={false}
-                onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+                onScroll={scrollHandler}
                 scrollEventThrottle={16}
             >
-                <View style={styles.scrollPadding} />
+                <View style={{ height: HEADER_HEIGHT - 60 }} />
                 
                 {/* Ana İçerik Kartı */}
                 <View style={styles.contentBox}>
@@ -171,7 +222,7 @@ export default function TourDetailScreen() {
                                 </View>
                             </View>
                             {tour.hasHotelPickup && (
-                                <Text style={styles.hotelPickupNote}>* Bu tur 'Otelden Ücretsiz Alış' (Hotel Pickup) içermektedir.</Text>
+                                <Text style={styles.hotelPickupNote}>{`* Bu tur 'Otelden Ücretsiz Alış' (Hotel Pickup) içermektedir.`}</Text>
                             )}
                         </View>
                     )}
@@ -207,7 +258,7 @@ export default function TourDetailScreen() {
                         <View style={{ marginBottom: 24 }}>
                             <Text style={styles.sectionTitle}>Turdan Kareler</Text>
                             <Text style={styles.galleryNote}>
-                                <FontAwesome name="check-circle" size={12} color="#10b981" /> Acenta tarafından yüklenen 'Gerçek Tur Fotoğrafları'
+                                <FontAwesome name="check-circle" size={12} color="#10b981" /> {` Acenta tarafından yüklenen 'Gerçek Tur Fotoğrafları'`}
                             </Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                                 {[...tour.gallery]
@@ -254,6 +305,30 @@ export default function TourDetailScreen() {
 
                     {/* Yorumlar Bölümü */}
                     <View style={styles.divider} />
+                    
+                    {/* Komut 11: Trust Badges (Güven Rozetleri) */}
+                    <View style={{ marginBottom: 24 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trustBadgesRow}>
+                            <View style={styles.trustBadge}>
+                                <FontAwesome name="certificate" size={14} color={ANATOLIAN_SAFFRON} />
+                                <Text style={styles.trustBadgeText}>TÜRSAB Onaylı</Text>
+                            </View>
+                            <View style={styles.trustBadge}>
+                                <FontAwesome name="history" size={14} color="#10b981" />
+                                <Text style={styles.trustBadgeText}>Ücretsiz İptal</Text>
+                            </View>
+                            <View style={styles.trustBadge}>
+                                <FontAwesome name="globe" size={14} color="#0071c2" />
+                                <Text style={styles.trustBadgeText}>İngilizce Rehber</Text>
+                            </View>
+                            <View style={styles.trustBadge}>
+                                <FontAwesome name="lock" size={14} color="#64748b" />
+                                <Text style={styles.trustBadgeText}>Güvenli Ödeme</Text>
+                            </View>
+                        </ScrollView>
+                    </View>
+
+                    {/* Yorumlar Bölümü */}
                     <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16}}>
                         <Text style={[styles.sectionTitle, {marginBottom: 0}]}>Misafir Yorumları</Text>
                         <Text style={{color: '#0071c2', fontWeight: '700', fontSize: 13}}>Tümünü Oku</Text>
@@ -262,30 +337,53 @@ export default function TourDetailScreen() {
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 24 }}>
                         <View style={styles.reviewCard}>
                             <View style={styles.reviewHeader}>
-                                <ImageBackground source={{uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}} style={styles.reviewAvatar} imageStyle={{borderRadius:20}} />
+                                <Image source={{uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80'}} style={styles.reviewAvatar} />
                                 <View style={{marginLeft: 12}}>
-                                    <Text style={styles.reviewName}>Ahmet Yılmaz</Text>
+                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                                        <Text style={styles.reviewName}>John Doe</Text>
+                                        <Text style={{fontSize: 14}}>🇺🇸</Text>
+                                    </View>
                                     <Text style={styles.reviewDate}>2 gün önce</Text>
                                 </View>
                                 <View style={{marginLeft: 'auto', backgroundColor: '#003580', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6}}>
                                     <Text style={{color: '#fff', fontSize: 12, fontWeight: '800'}}>10.0</Text>
                                 </View>
                             </View>
-                            <Text style={styles.reviewText}>"Her şey harikaydı, hayatımda yaşadığım en güzel gündü!"</Text>
+                            <Text style={styles.reviewText}>{`"Incredible experience! The balloon flight over Cappadocia was a dream come true."`}</Text>
                         </View>
 
                         <View style={styles.reviewCard}>
                             <View style={styles.reviewHeader}>
-                                <ImageBackground source={{uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'}} style={styles.reviewAvatar} imageStyle={{borderRadius:20}} />
+                                <Image source={{uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'}} style={styles.reviewAvatar} />
                                 <View style={{marginLeft: 12}}>
-                                    <Text style={styles.reviewName}>Ayşe Demir</Text>
+                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                                        <Text style={styles.reviewName}>Sarah Wilson</Text>
+                                        <Text style={{fontSize: 14}}>🇬🇧</Text>
+                                    </View>
                                     <Text style={styles.reviewDate}>1 hafta önce</Text>
                                 </View>
                                 <View style={{marginLeft: 'auto', backgroundColor: '#003580', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6}}>
                                     <Text style={{color: '#fff', fontSize: 12, fontWeight: '800'}}>9.5</Text>
                                 </View>
                             </View>
-                            <Text style={styles.reviewText}>"Rehberimiz çok bilgiliydi. Taksi transferi çok rahattı."</Text>
+                            <Text style={styles.reviewText}>{`"The guide was very knowledgeable. Everything was perfectly organized."`}</Text>
+                        </View>
+
+                        <View style={styles.reviewCard}>
+                            <View style={styles.reviewHeader}>
+                                <Image source={{uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&q=80'}} style={styles.reviewAvatar} />
+                                <View style={{marginLeft: 12}}>
+                                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                                        <Text style={styles.reviewName}>Melih Turan</Text>
+                                        <Text style={{fontSize: 14}}>🇹🇷</Text>
+                                    </View>
+                                    <Text style={styles.reviewDate}>3 hafta önce</Text>
+                                </View>
+                                <View style={{marginLeft: 'auto', backgroundColor: '#003580', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6}}>
+                                    <Text style={{color: '#fff', fontSize: 12, fontWeight: '800'}}>10.0</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.reviewText}>{`"Kapadokya'nın ruhunu hissettiğimiz harika bir tur oldu. Kesinlikle tavsiye ederim."`}</Text>
                         </View>
                     </ScrollView>
 
@@ -319,7 +417,16 @@ export default function TourDetailScreen() {
                 <View style={styles.priceContainer}>
                     <Text style={styles.priceLabel}>Kişi başı</Text>
                     <Text style={styles.priceAmount}>{formatPriceWithContext(getDisplayPrice(tour.price, tour.currency || 'TRY', currency).amount, currency, language)}</Text>
+                    
+                    {/* Komut 12: Combo Upsell Button */}
+                    <TouchableOpacity 
+                      style={styles.comboUpsell}
+                      onPress={() => router.push(`/checkout/upsell?id=${tour.id}&date=${selectedDate}&meal=true`)}
+                    >
+                      <PulsingBadge text="+ Yemek Ekle (%15 İndirim)" />
+                    </TouchableOpacity>
                 </View>
+
                 <TouchableOpacity 
                     style={[
                         styles.buyBtn, 
@@ -334,7 +441,7 @@ export default function TourDetailScreen() {
                         numberOfLines={1} 
                         adjustsFontSizeToFit
                     >
-                        {!selectedDate ? 'Tarih Seçiniz' : (tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 ? 'Kontenjan Dolu - Başka Tarih Seç' : 'Rezervasyon Yap')}
+                        {!selectedDate ? 'Tarih Seçiniz' : (tour.availabilities?.find(a => a.date === selectedDate)?.capacity === 0 ? 'Kontenjan Dolu' : 'Rezervasyon Yap')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -429,5 +536,13 @@ const styles = StyleSheet.create({
     lightboxContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
     lightboxCloseBtn: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 30, right: 20, zIndex: 100, padding: 10, width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 25 },
     lightboxScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', width: width, height: height },
-    lightboxImage: { width: width, height: height * 0.8 }
+    lightboxImage: { width: width, height: height * 0.8 },
+
+    trustBadgesRow: { gap: 12, paddingRight: 24 },
+    trustBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', gap: 8 },
+    trustBadgeText: { fontSize: 13, fontWeight: '700', color: '#475569' },
+
+    comboUpsell: { marginTop: 6 },
+    pulsingBadge: { backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#fdba74' },
+    pulsingBadgeText: { color: '#c2410c', fontSize: 11, fontWeight: '900' }
 });

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type UserRole = 'customer' | 'agency';
+type UserRole = 'customer' | 'agency' | 'superadmin';
 
 interface AuthContextType {
     userRole: UserRole;
@@ -37,6 +37,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             
             if (role === 'agency') {
                 setUserRole('agency');
+            } else if (role === 'superadmin') {
+                setUserRole('superadmin');
             } else {
                 setUserRole('customer');
             }
@@ -52,7 +54,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const login = async (role?: string) => {
-        const finalRole: UserRole = role === 'agency' ? 'agency' : 'customer';
+        let finalRole: UserRole = 'customer';
+        if (role === 'agency') finalRole = 'agency';
+        if (role === 'superadmin') finalRole = 'superadmin';
+        
         setUserRole(finalRole);
         setIsGuest(false);
         try {

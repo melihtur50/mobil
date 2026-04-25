@@ -8,7 +8,7 @@ export default function VerifyResetScreen() {
     const [code, setCode] = useState('');
 
     const handleVerifyCode = () => {
-        if (code.length < 4) {
+        if (code.length !== 6) {
             Alert.alert('Hata', 'Lütfen 6 haneli doğrulama kodunu girin.');
             return;
         }
