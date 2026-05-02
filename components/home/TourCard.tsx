@@ -54,7 +54,7 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, index = 0, style }) =>
           {tour.isPremiumPartner && (
             <View style={styles.premiumBadge}>
               <FontAwesome name="bolt" size={10} color={Colors.light.secondary} />
-              <Text style={styles.premiumText}>PREMIUM</Text>
+              <Text style={styles.premiumText}>ÖZEL</Text>
             </View>
           )}
 

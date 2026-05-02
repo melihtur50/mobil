@@ -76,11 +76,13 @@ const TabItem = ({ route, isFocused, options, navigation }: any) => {
   // Color Glow Animation
   const animatedContainerStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: withTiming(isFocused ? ANATOLIAN_SAFFRON : 'transparent', { duration: 250 }),
+      backgroundColor: withTiming(isFocused ? 'rgba(255, 159, 0, 0.15)' : 'transparent', { duration: 250 }),
       shadowColor: ANATOLIAN_SAFFRON,
-      shadowOpacity: withTiming(isFocused ? 0.6 : 0),
-      shadowRadius: withTiming(isFocused ? 12 : 0),
-      elevation: isFocused ? 8 : 0
+      shadowOpacity: withTiming(isFocused ? 0.8 : 0),
+      shadowRadius: withTiming(isFocused ? 15 : 0),
+      elevation: isFocused ? 10 : 0,
+      borderWidth: isFocused ? 1 : 0,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
     };
   });
 
@@ -93,7 +95,7 @@ const TabItem = ({ route, isFocused, options, navigation }: any) => {
       case 'tickets': 
         return { Lib: FontAwesome, name: 'credit-card' }; // Cüzdan
       case 'profile': 
-        return { Lib: FontAwesome, name: 'diamond' }; // VIP
+        return { Lib: FontAwesome, name: 'user-circle' }; // Profil / User
       default: 
         return { Lib: FontAwesome, name: 'circle' };
     }
@@ -105,13 +107,13 @@ const TabItem = ({ route, isFocused, options, navigation }: any) => {
     <TouchableOpacity
       onPress={onPress}
       style={[styles.tabItem, { flex: isFocused ? 1.8 : 1 }]}
-      activeOpacity={0.8}
+      activeOpacity={1}
     >
       <Animated.View style={[styles.iconContainer, animatedContainerStyle, animatedIconStyle]}>
         <Lib 
           name={name as any} 
           size={22} 
-          color={isFocused ? Colors.light.primary : Colors.light.tabIconDefault} 
+          color={isFocused ? ANATOLIAN_SAFFRON : 'rgba(169, 169, 169, 0.7)'} 
         />
       </Animated.View>
       {isFocused && (
@@ -142,8 +144,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 10,
     ...Shadows.lg,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 159, 0, 0.2)', // Subtle Anatolian Saffron border
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)', // Precise 1px separator line
     alignItems: 'center',
     justifyContent: 'space-around',
     width: '100%',

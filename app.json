@@ -24,7 +24,7 @@
       "package": "com.melihtur.tourkia",
       "adaptiveIcon": {
         "backgroundColor": "#001A33",
-        "foregroundImage": "./assets/images/adaptive-icon.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [

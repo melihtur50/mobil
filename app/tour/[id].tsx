@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { 
     Dimensions, 
     Image, 
+    Platform,
     SafeAreaView, 
     ScrollView, 
     StyleSheet, 
@@ -12,7 +13,8 @@ import {
     View, 
     FlatList,
     Modal,
-    StatusBar
+    StatusBar,
+    Linking
 } from 'react-native';
 import Animated, { 
     useSharedValue, 

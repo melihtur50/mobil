@@ -15,7 +15,7 @@ const resources = {
 
 const supportedLanguages = ['tr', 'en', 'ru', 'zh'];
 const locales = Localization.getLocales();
-let initialLanguage = 'en'; // Default fallback
+let initialLanguage = 'tr'; // Default fallback
 
 if (locales && locales.length > 0) {
   const deviceLanguage = locales[0].languageCode;
@@ -34,7 +34,7 @@ i18n
   .init({
     resources,
     lng: initialLanguage,
-    fallbackLng: 'en',
+    fallbackLng: 'tr',
     interpolation: {
       escapeValue: false,
     },

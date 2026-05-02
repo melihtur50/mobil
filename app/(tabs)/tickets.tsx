@@ -24,6 +24,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+import * as Brightness from 'expo-brightness';
 import VoucherCard from '../../components/VoucherCard';
 import {
   OfflineTicket,

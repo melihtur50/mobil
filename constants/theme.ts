@@ -18,7 +18,7 @@ export const Colors = {
     border: '#E2E8F0',
     tint: RoyalGold,
     icon: '#64748B',
-    tabIconDefault: '#94A3B8',
+    tabIconDefault: '#A9A9A9',
     tabIconSelected: RoyalGold,
     success: '#10B981',
     warning: '#F59E0B',

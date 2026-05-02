@@ -1,14 +1,13 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Animated, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
 import { AnimatedButton } from '../../components/common/AnimatedButton';
 import { ReferralService } from '../../services/referralService';
-import { Modal, TouchableOpacity, TextInput } from 'react-native';
 
 export default function ProfileScreen() {
     const router = useRouter();
